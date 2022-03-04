@@ -29,19 +29,37 @@ class PullDataError(RuntimeError, KeyError, ValueError, BaseException):
     """Base class for exceptions arising from this module."""
 
 
-def get_fund_data(fund):
+def get_fund_data(fund, start_date=YEAR_AGO_DATE):
     try:
         yf = YahooFinancials(fund)
         yearly_close = yf.get_historical_price_data(
-            start_date=YEAR_AGO_DATE,
+            start_date=start_date,
             end_date=CURRENT_DATE,
             time_interval='daily'
         )
-    except PullDataError as pde:
+    except PullDataError:
         msg = f'Error pulling data from source for {fund}.'
         log.warning(msg)
     finally:
         return None or yearly_close
+
+
+def get_custom_fund_data(fund, start_date, end_date):
+    start_date = start_date.__str__()
+    end_date = end_date.__str__()
+
+    try:
+        yf = YahooFinancials(fund)
+        close = yf.get_historical_price_data(
+            start_date=start_date,
+            end_date=end_date,
+            time_interval='daily'
+        )
+    except PullDataError:
+        msg = f'Error pulling data from source for {fund}.'
+        log.warning(msg)
+    finally:
+        return None or close
 
 
 def self_test():

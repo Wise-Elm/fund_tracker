@@ -4,9 +4,11 @@
 
 import logging
 import uuid
+from datetime import datetime
 from logging import handlers
 
 
+DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_CORE_LOG_FILENAME = 'core.log'  # Used when __name__ == '__main__'
 CORE_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
@@ -27,6 +29,8 @@ class Fund:
         self.symbol = symbol
         self.currency = currency
         self.instrument_type = instrument_type
+        for dp in dates_prices:
+            dp[0] = datetime.strptime(dp[0], DATE_FORMAT).date()
         self.dates_prices = dates_prices
 
     def __str__(self):
@@ -37,6 +41,15 @@ class Fund:
             f'{self.currency} - {self.instrument_type}\n' \
             f'Latest price: {self.dates_prices[-1][0]} - ${formatted_price}'
         return formatted_str
+
+    def __repr__(self):
+        return self.symbol
+
+    def __eq__(self, other):
+        if other is type(Fund):
+            return True if self.symbol == other.symbol else False
+        elif isinstance(other, str):
+            return True if self.symbol == other else False
 
 
 def self_test():
