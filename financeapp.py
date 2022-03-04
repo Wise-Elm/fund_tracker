@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __version__ = '0.1.0'
@@ -57,10 +57,11 @@ class FundTracker:
             given path.
     """
 
-    def __init__(self, load=True, data_file=False):
+    def __init__(self, load=True, data_file=None):
         self.repo = Repo(load, data_file)
         self.symbols_names: list[str] = self.repo.symbols_names  # ex: ['F', 'FXAIX']
         self.funds: list[Fund] = []  # ex: [Fund objects]
+        self.instantiate_funds()
 
     def instantiate_funds(self):
         """Populate self.funds by getting fund data and instantiating Fund
@@ -126,21 +127,49 @@ class FundTracker:
     def save(self, data=None, data_file=False):
         """Saves data.
 
-        Saves fund symbol and name if name is populated.
+        Must be .csv file type. Saves fund symbol and name if name is populated.
 
         Args:
             data (None or list[Fund]): First parameter. Defaults to None. Saves
-                data from self.funds when None, saves supplied list data
-                otherwise.
+                data from self.funds when None, saves supplied list data otherwise.
+            data_file (str or False): Second parameter. OPTIONAL. String representing a
+                file name to save data. '.csv' is the only supported file type. Will
+                create new file with that name if one does not exist. If False, will use
+                default file name.
 
+        Returns: None
         """
-        # TODO (GS): pickup here
+
         if not data:
             data = self.funds
         self.repo.save(data, data_file)
 
+    def generate_all_fund_perf_str(self, day=True, week=True, year=True):
+        """Generates previous 24 hour, week, and year performance of all funds
+        depending on arguments.
+
+        Args:
+            day (Bool): Defaults to True. When true includes previous day fund
+                performance in return.
+            week (Bool): Defaults to True. When true includes previous week
+                fund performance in return.
+            year (Bool): Defaults to True. When true includes previous year
+                fund performance in return.
+
+        Returns:
+            all_performance (str): String including general fund information as
+                well time based performance data depending on arguments.
+        """
+
+        all_performance = ''
+        for fund in self.funds:
+            all_performance += '\n' + self.generate_fund_performance_str(fund)
+            all_performance += '\n' + '*' * 50
+        return all_performance
+
     def generate_fund_performance_str(self, fund: Fund, day=True, week=True, year=True):
-        """Generates previous 24 hour, week, and year performance of fund.
+        """Generates previous 24 hour, week, and year performance of fund
+        depending on arguments.
 
         Args:
             fund (Fund): Fund object.
@@ -160,46 +189,96 @@ class FundTracker:
 
         if day:
             day_change = '{:.2f}'.format(self.day_performance(fund)[0])
+            if day_change[0] != '-':  # Add '+' when number is not negative.
+                day_change = '+' + day_change
             performance += '\n' + f'Previous 24 hours: {day_change}%'
+
         if week:
             week_change = '{:.2f}'.format(self.week_performance(fund)[0])
+            if week_change[0] != '-':  # Add '+' when number is not negative.
+                week_change = '+' + week_change
             performance += '\n' + f'Previous week: {week_change}%'
+
         if year:
             year_change = '{:.2f}'.format(self.year_performance(fund)[0])
+            if year_change[0] != '-':  # Add '+' when number is not negative.
+                year_change = '+' + year_change
             performance += '\n' + f'Previous year: {year_change}%'
 
         return performance
 
-    def custom_range_performance(self, fund, start_date, end_date):
+    def custom_range_performance(self, fund: str, start_date, end_date):
+        """Get the performance of fund over a specified date range.
+
+        Args:
+            fund (str): Fund symbol:
+                Example:
+                    'FXAIX'
+            start_date (str): Date in format yyyy-mm-dd.
+            end_date (str): Date in format yyyy-mm-dd.
+
+        Returns:
+            tuple(
+                difference:float,
+                start_date:datetime object,
+                end_date:datetime object,
+                fund:Fund object
+            )
+        """
+
+        # Change start_date and end_date from strings to datetime objects to
+        # enable date range comparisons.
         start_date = datetime.strptime(start_date, DATE_FORMAT).date()
         end_date = datetime.strptime(end_date, DATE_FORMAT).date()
-        start_date_price = None
-        end_date_price = None
-        target_fund = None
 
+        start_date_price = None  # Later populated with float.
+        end_date_price = None  # Later populated with float.
+        target_fund = None  # Later populated with Fund object.
+
+        # See if fund is already an object.
         if fund in self.funds:
             target_fund = self.funds[self.funds.index(fund)]
             most_current_date = target_fund.dates_prices[0][0]
+
+            # Use last available trading date if end date is past the most
+            # current data.
             if end_date >= most_current_date or not end_date:
                 end_date_price = most_current_date
 
+            # Pull start_date_price from stored data if date is stored.
             if start_date > target_fund.dates_prices[:-1][0][0]:
                 for date_price in target_fund.dates_prices:
                     if date_price[0] == start_date:
                         start_date_price = target_fund.dates_prices
 
+        # When start_date_price is None then retrieve needed data using
+        # the pull_data module.
         if start_date_price is None:
             data = get_custom_fund_data(fund, start_date, end_date)
             parsed_data = self.parse_fund_data(data)
-            target_fund = Fund(*parsed_data)
+            target_fund = Fund(*parsed_data)  # create Fund w/date from desired range.
             start_date_price = target_fund.dates_prices[-1][1]
             end_date_price = target_fund.dates_prices[0][1]
 
         difference = self.calculate_percentage(start_date_price, end_date_price)
         return difference, start_date, end_date, fund
 
-    def day_performance(self, fund):
+    def day_performance(self, fund: Fund):
+        """Get the performance of fund period between last open and close.
+
+        Args:
+            fund (Fund): Fund object.
+
+        Returns:
+            tuple(difference[float], Fund): tuple[0] returns the difference in
+            closing fund price. tuple[1] returns the Fund object.
+        """
+
         most_current = fund.dates_prices[-1]
+
+        if most_current[1] is None:
+            most_current = fund.dates_prices[-2]
+
         day_before = None
         latest_date = most_current[0]
         day_ago_price = latest_date - timedelta(days=1)
@@ -215,8 +294,23 @@ class FundTracker:
 
         return difference, fund
 
-    def week_performance(self, fund):
+    def week_performance(self, fund: Fund):
+        """Get the performance of fund period between last close and the close
+        from a week prior.
+
+        Args:
+            fund (Fund): Fund object.
+
+        Returns:
+            tuple(difference[float], Fund): tuple[0] returns the difference in
+            closing fund price. tuple[1] returns the Fund object.
+        """
+
         most_current = fund.dates_prices[-1]
+
+        if most_current[1] is None:
+            most_current = fund.dates_prices[-2]
+
         week_before = None
         latest_date = most_current[0]
         week_ago_date = latest_date - timedelta(weeks=1)
@@ -232,11 +326,26 @@ class FundTracker:
 
         return difference, fund
 
-    def year_performance(self, fund):
+    def year_performance(self, fund: Fund):
+        """Get the performance of fund period between last close and the close
+        from a year prior.
+
+        Args:
+            fund (Fund): Fund object.
+
+        Returns:
+            tuple(difference[float], Fund): tuple[0] returns the difference in
+            closing fund price. tuple[1] returns the Fund object.
+        """
+
         most_current = fund.dates_prices[-1]
+
+        if most_current[1] is None:
+            most_current = fund.dates_prices[-2]
+
         year_before = None
         latest_date = most_current[0]
-        year_ago_date = latest_date - timedelta(weeks=52)
+        year_ago_date = latest_date - timedelta(weeks=52)  # 52 weeks is 1 year.
 
         for date_price in fund.dates_prices:
             if date_price[0] == year_ago_date:
@@ -262,6 +371,8 @@ class FundTracker:
                 argument.
         """
 
+        first_price, last_price = float(first_price), float(last_price)
+
         if first_price == last_price:
             difference = 0.0
         elif first_price > last_price:  # Percentage decrease.
@@ -269,6 +380,7 @@ class FundTracker:
             difference = -abs(difference)
         elif first_price < last_price:  # Percentage increase.
             difference = (last_price - first_price) / last_price * 100
+
         return difference
 
     def main_event_loop(self):
@@ -292,6 +404,15 @@ class FundTracker:
 
         return
 
+    def print_to_screen(self, anything: str):
+        """Print any string to screen.
+
+        Args:
+            anything (str): String in which to print to screen.
+        """
+
+        print(anything)
+
 
 def parse_args(argv=sys.argv):
     """Setup shell environment to run program."""
@@ -309,6 +430,14 @@ def parse_args(argv=sys.argv):
         '-t',
         '--test',
         help='Run testing on application and exit',
+        action='store_true',
+        default=False
+    )
+
+    parser.add_argument(
+        '-ga',
+        '--getall',
+        help='Get performance data for all saved funds and exit.',
         action='store_true',
         default=False
     )
@@ -331,6 +460,8 @@ def run_application(args):
         None
     """
 
+    log.debug(args)
+
     # Skip instantiating Application if self testing is selected.
     if args.test:
         log.debug('Begin unittests...')
@@ -341,15 +472,17 @@ def run_application(args):
 
         return
 
-    app = FundTracker()  # Begin application instance.
+    ft = FundTracker()  # Begin application instance.
+    ft.instantiate_funds()
     log.debug('Application instantiated.')
 
-    # if args.something:
-    #     do something
-    #     return
+    if args.getall:
+        funds = ft.generate_all_fund_perf_str()
+        ft.print_to_screen(funds)
+        return
 
     # Run Application main event loop when no args are True.
-    app.main_event_loop()
+    ft.main_event_loop()
     return
 
 
@@ -376,8 +509,7 @@ def test():
     """For development level module testing."""
 
     ft = FundTracker()
-    ft.instantiate_funds()
-    print(ft.generate_fund_performance_str(ft.funds[0]))
+    print(ft.generate_all_fund_perf_str())
     ft.save()
 
 

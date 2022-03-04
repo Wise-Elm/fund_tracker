@@ -16,7 +16,7 @@ CORE_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
 
 CURRENT_DATE = date.today().__str__()
-YEAR_AGO_DATE = (date.today() - relativedelta(years=1)).__str__()
+YEAR_AND_WEEK_AGO_DATE = (date.today() - relativedelta(years=1, weeks=1)).__str__()
 MONTH_AGO_DATE = (date.today() - relativedelta(months=1)).__str__()
 WEEK_AGO_DATE = (date.today() - relativedelta(weeks=1)).__str__()
 
@@ -29,7 +29,7 @@ class PullDataError(RuntimeError, KeyError, ValueError, BaseException):
     """Base class for exceptions arising from this module."""
 
 
-def get_fund_data(fund, start_date=YEAR_AGO_DATE):
+def get_fund_data(fund, start_date=YEAR_AND_WEEK_AGO_DATE):
     try:
         yf = YahooFinancials(fund)
         yearly_close = yf.get_historical_price_data(
