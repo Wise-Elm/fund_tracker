@@ -31,11 +31,11 @@ class Repo:
         load_data (bool): First parameter. Load saved data when true.
         data_file (str or None): Second parameter. When string is given data will be
             saved and loaded to the file represented by the string. When None, data will
-            be saved and loaded to defaul file path.
+            be saved and loaded to default file path.
     """
 
     def __init__(self, load_data: bool, data_file: str):
-        self.load_data = load_data
+        self.load_data = load_data or []
         self.data_file = data_file or DEFAULT_DATA_FILE
         self.symbols_names = []
         self.fields = CSV_STORAGE_FIELDS

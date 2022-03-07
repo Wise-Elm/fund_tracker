@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 from logging import handlers
 
 from core import Fund, DATE_FORMAT
-from pull_data import get_fund_data, get_custom_fund_data
+from pull_data import get_fund_data, get_custom_fund_data, PullDataError
 from storage import Repo
 
 
@@ -61,7 +61,8 @@ class FundTracker:
         self.repo = Repo(load, data_file)
         self.symbols_names: list[str] = self.repo.symbols_names  # ex: ['F', 'FXAIX']
         self.funds: list[Fund] = []  # ex: [Fund objects]
-        self.instantiate_funds()
+        #   List where funds are stored.
+        self.instantiate_funds()  # Populates self.funds with fund objects.
 
     def instantiate_funds(self):
         """Populate self.funds by getting fund data and instantiating Fund
@@ -88,6 +89,33 @@ class FundTracker:
                 fund = Fund(*fund_data)
                 self.funds.append(fund)
         return self.funds
+
+    def instantiate_fund(self, symbol: str, name: str | None):
+        """Instantiate new fund into Fund object.
+
+        Args:
+            symbol (str): First parameter. Fund symbol. ex. 'FXAIX' or 'F'.
+            name (str): Second parameter. OPTIONAL. An unofficial unique
+                identifying name chosen by user to represent fund.
+
+        Returns:
+            success (bool): True if successful, False otherwise.
+        """
+
+        # Check if fund is already represented in data.
+        for fund in self.funds:
+            if symbol == fund:
+                return False
+
+        data = get_fund_data(symbol)  # Check for problem getting data.
+        if data is None:
+            return False
+
+        fund_data = self.parse_fund_data(data)
+        fund = Fund(*fund_data, name=name)
+        self.funds.append(fund)
+
+        return True
 
     def parse_fund_data(self, data: dict):
         """Convert pulled data from YahooFinancials into a list of desired
@@ -144,6 +172,43 @@ class FundTracker:
             data = self.funds
         self.repo.save(data, data_file)
 
+    def find_fund(self, symbol: str):
+        """Finds and return Fund object if it exists.
+
+        Args:
+            symbol: (str): Symbol representing a fund.
+
+        Returns:
+            fund (Fund or None): Fund object if found, None otherwise.
+        """
+
+        for existing_fund in self.funds:
+            if existing_fund == symbol:
+                fund = existing_fund
+                return fund
+
+        return None
+
+    def delete_fund(self, symbol: str):
+        """Delete indicated fund.
+
+        Args:
+            symbol (str): String representation of fund to delete.
+
+        Returns:
+            success (Fund or False): Fund if successful, False otherwise.
+        """
+
+        # Find fund.
+        fund = self.find_fund(symbol)
+        if fund is None:
+            return False
+
+        # Remove fund from self.funds.
+        self.funds.remove(fund)
+
+        return fund
+
     def generate_all_fund_perf_str(self, day=True, week=True, year=True):
         """Generates previous 24 hour, week, and year performance of all funds
         depending on arguments.
@@ -162,8 +227,9 @@ class FundTracker:
         """
 
         all_performance = ''
+        kvargs = day, week, year
         for fund in self.funds:
-            all_performance += '\n' + self.generate_fund_performance_str(fund)
+            all_performance += '\n' + self.generate_fund_performance_str(fund, *kvargs)
             all_performance += '\n' + '*' * 50
         return all_performance
 
@@ -207,7 +273,7 @@ class FundTracker:
 
         return performance
 
-    def custom_range_performance(self, fund: str, start_date, end_date):
+    def custom_range_performance(self, fund: str, start_date: str, end_date: str):
         """Get the performance of fund over a specified date range.
 
         Args:
@@ -383,6 +449,21 @@ class FundTracker:
 
         return difference
 
+    def add_fund(self, symbol: str, name: str | None):
+        """Add fund to saved data.
+
+        Args:
+            symbol (str): First parameter. Fund symbol. ex. 'FXAIX' or 'F'. Will
+                convert symbol to upper case.
+            name (str): Second parameter. OPTIONAL. An unofficial unique
+                identifying name chosen by user to represent fund.
+
+        Returns:
+            fund (True): True if successful, False otherwise.
+        """
+
+        return self.instantiate_fund(symbol=symbol.upper(), name=name)
+
     def main_event_loop(self):
         """Run application.
 
@@ -398,7 +479,6 @@ class FundTracker:
 
         log.debug('Entering Main Event Loop...')
 
-        pass
 
         log.debug('Main Event Loop has ended.')
 
@@ -442,6 +522,32 @@ def parse_args(argv=sys.argv):
         default=False
     )
 
+    # TODO (GS): Fix to allow absence of optional argument.
+    parser.add_argument(
+        '-a',
+        '--add',
+        help='Add fund. Symbol followed by optional Name in quotations.',
+        nargs='+',
+        metavar=('Symbol', 'Name'),
+        default=(None, None)
+    )
+
+    parser.add_argument(
+        '-d',
+        '--delete',
+        help='Delete fund. Give symbol for fund to delete.',
+        nargs=1,
+        default=False,
+        metavar='Symbol'
+    )
+
+    # parser.add_argument(
+    #     '-f',
+    #     '--fund',
+    #     help='Show information of individual fund. OPTIONAL: d, w, y.'
+    #
+    # )
+
     args = parser.parse_args()  # Collect arguments.
 
     log.debug(f'args: {args}')
@@ -473,7 +579,6 @@ def run_application(args):
         return
 
     ft = FundTracker()  # Begin application instance.
-    ft.instantiate_funds()
     log.debug('Application instantiated.')
 
     if args.getall:
@@ -481,8 +586,22 @@ def run_application(args):
         ft.print_to_screen(funds)
         return
 
+    elif args.add[0] is not None:
+        if len(args.add) == 1:  # When name is not collected.
+            args.add.append(None)
+        ft.add_fund(args.add[0], args.add[1])
+        ft.save()
+        return
+
+    elif args.delete:
+        ft.delete_fund(*args.delete)
+        ft.save()
+        return
+
     # Run Application main event loop when no args are True.
     ft.main_event_loop()
+    ft.save()
+
     return
 
 
@@ -509,7 +628,6 @@ def test():
     """For development level module testing."""
 
     ft = FundTracker()
-    print(ft.generate_all_fund_perf_str())
     ft.save()
 
 
@@ -536,7 +654,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    test()
+    main()
+    # test()
 
 

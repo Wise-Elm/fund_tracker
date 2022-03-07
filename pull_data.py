@@ -29,7 +29,20 @@ class PullDataError(RuntimeError, KeyError, ValueError, BaseException):
     """Base class for exceptions arising from this module."""
 
 
-def get_fund_data(fund, start_date=YEAR_AND_WEEK_AGO_DATE):
+def get_fund_data(fund: str, start_date: str=YEAR_AND_WEEK_AGO_DATE):
+    """Retrieve data for fund.
+
+
+
+    Args:
+        fund (str): First parameter. Fund symbol. ex. 'FBGRX'.
+        start_date (str): Second parameter. Start date (yyyy-mm-dd) for data
+            retrieval. Defaults to 1 year & 1 week prior to current date.
+
+    Returns:
+        yearly_close (dict) or None. Dictionary of fund data or None.
+    """
+
     try:
         yf = YahooFinancials(fund)
         yearly_close = yf.get_historical_price_data(
@@ -44,7 +57,19 @@ def get_fund_data(fund, start_date=YEAR_AND_WEEK_AGO_DATE):
         return None or yearly_close
 
 
-def get_custom_fund_data(fund, start_date, end_date):
+def get_custom_fund_data(fund, start_date: date, end_date: date):
+    """Retrieve data for fund between argument dates.
+
+    Args:
+        fund (str): First parameter. Fund symbol. ex. 'FBGRX'.
+        start_date (date object): date object for start date.
+        end_date (date object): date object for end date.
+
+    Returns:
+        close (dict) or None: Retrieve a dictionary of fund date between the
+            argument dates.
+    """
+
     start_date = start_date.__str__()
     end_date = end_date.__str__()
 
