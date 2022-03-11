@@ -75,6 +75,8 @@ class FundTracker:
             self.funds (List[Fund]): List of instantiated Fund objects.
         """
 
+        log.debug('Instantiate funds...')
+
         symbols_names = self.symbols_names or None
         if symbols_names:
             for symbol_name in symbols_names:
@@ -88,6 +90,9 @@ class FundTracker:
                     fund_data.append(symbol_name[1])
                 fund = Fund(*fund_data)
                 self.funds.append(fund)
+
+        log.debug('Instantiate funds complete.')
+
         return self.funds
 
     def instantiate_fund(self, symbol: str, name: str | None):
@@ -102,6 +107,8 @@ class FundTracker:
             success (bool): True if successful, False otherwise.
         """
 
+        log.debug(f'Instantiate fund ({symbol})...')
+
         # Check if fund is already represented in data.
         for fund in self.funds:
             if symbol == fund:
@@ -114,6 +121,8 @@ class FundTracker:
         fund_data = self.parse_fund_data(data)
         fund = Fund(*fund_data, name=name)
         self.funds.append(fund)
+
+        log.debug('Instantiate fund ({symbol}) complete.')
 
         return True
 
@@ -141,6 +150,9 @@ class FundTracker:
                     ['symbol', 'currency', 'instrument type', [[dates & prices]]]
         """
 
+        # Show symbol for fund being parsed.
+        log.debug('Parse fund data ({})...'.format([k for k in data][0]))
+
         key = tuple(data.keys())
         symbol = key[0]
         currency = data[symbol]['currency']
@@ -150,6 +162,10 @@ class FundTracker:
             [[day['formatted_date'], day['close']] for day in all_dates_prices]
 
         desired_data = [symbol, currency, instrument_type, dates_prices]
+
+        # Show symbol for fund being parsed.
+        log.debug('Parse fund data ({}) complete.'.format([k for k in data][0]))
+
         return None or desired_data
 
     def save(self, data=None, data_file=False):
@@ -168,6 +184,8 @@ class FundTracker:
         Returns: None
         """
 
+        log.debug('Save...')
+
         if not data:
             data = self.funds
         self.repo.save(data, data_file)
@@ -182,10 +200,14 @@ class FundTracker:
             fund (Fund or None): Fund object if found, None otherwise.
         """
 
+        log.debug(f'Find fund ({symbol})...')
+
         for existing_fund in self.funds:
             if existing_fund == symbol:
                 fund = existing_fund
                 return fund
+
+        log.debug(f'Find fund ({symbol}) complete.')
 
         return None
 
@@ -199,6 +221,8 @@ class FundTracker:
             success (Fund or False): Fund if successful, False otherwise.
         """
 
+        log.debug(f'Delete fund ({symbol})...')
+
         # Find fund.
         fund = self.find_fund(symbol)
         if fund is None:
@@ -206,6 +230,8 @@ class FundTracker:
 
         # Remove fund from self.funds.
         self.funds.remove(fund)
+
+        log.debug(f'Delete fund  ({symbol}) complete.')
 
         return fund
 
@@ -226,11 +252,16 @@ class FundTracker:
                 well time based performance data depending on arguments.
         """
 
+        log.debug('Generate all fund perf str...')
+
         all_performance = ''
         kvargs = day, week, year
         for fund in self.funds:
             all_performance += '\n' + self.generate_fund_performance_str(fund, *kvargs)
             all_performance += '\n' + '*' * 50
+
+        log.debug('Generate all fund perf str complete.')
+
         return all_performance
 
     def generate_fund_performance_str(self, fund: Fund, day=True, week=True, year=True):
@@ -250,6 +281,8 @@ class FundTracker:
             performance (str): String including general fund information as
                 well time based performance data depending on arguments.
         """
+
+        log.debug(f'Generate fund perf str ({fund.__repr__()})...')
 
         performance = fund.__str__()
 
@@ -271,6 +304,8 @@ class FundTracker:
                 year_change = '+' + year_change
             performance += '\n' + f'Previous year: {year_change}%'
 
+        log.debug(f'Generate fund perf str ({fund.__repr__()}) complete.')
+
         return performance
 
     def custom_range_performance(self, fund: str, start_date: str, end_date: str):
@@ -291,6 +326,8 @@ class FundTracker:
                 fund:Fund object
             )
         """
+
+        log.debug(f'Custom range performance ({fund})...')
 
         # Change start_date and end_date from strings to datetime objects to
         # enable date range comparisons.
@@ -327,6 +364,9 @@ class FundTracker:
             end_date_price = target_fund.dates_prices[0][1]
 
         difference = self.calculate_percentage(start_date_price, end_date_price)
+
+        log.debug(f'Custom range performance ({fund}) complete.')
+
         return difference, start_date, end_date, fund
 
     def day_performance(self, fund: Fund):
@@ -339,6 +379,8 @@ class FundTracker:
             tuple(difference[float], Fund): tuple[0] returns the difference in
             closing fund price. tuple[1] returns the Fund object.
         """
+
+        log.debug(f'Day performance ({fund.__repr__()})...')
 
         most_current = fund.dates_prices[-1]
 
@@ -358,6 +400,10 @@ class FundTracker:
         else:
             difference = None
 
+        log.debug(f'Day performance ('
+                  f'fund: {fund.__repr__()}, performance: {difference})'
+                  f' complete.')
+
         return difference, fund
 
     def week_performance(self, fund: Fund):
@@ -371,6 +417,8 @@ class FundTracker:
             tuple(difference[float], Fund): tuple[0] returns the difference in
             closing fund price. tuple[1] returns the Fund object.
         """
+
+        log.debug(f'Week performance ({fund.__repr__()})...')
 
         most_current = fund.dates_prices[-1]
 
@@ -390,6 +438,10 @@ class FundTracker:
         else:
             difference = None
 
+        log.debug(f'Week performance ('
+                  f'fund: {fund.__repr__()}, performance: {difference})'
+                  f' complete.')
+
         return difference, fund
 
     def year_performance(self, fund: Fund):
@@ -403,6 +455,8 @@ class FundTracker:
             tuple(difference[float], Fund): tuple[0] returns the difference in
             closing fund price. tuple[1] returns the Fund object.
         """
+
+        log.debug(f'Year performance ({fund.__repr__()})...')
 
         most_current = fund.dates_prices[-1]
 
@@ -422,6 +476,10 @@ class FundTracker:
         else:
             difference = None
 
+        log.debug(f'Year performance ('
+                  f'fund: {fund.__repr__()}, performance: {difference})'
+                  f' complete.')
+
         return difference, fund
 
     def calculate_percentage(self, first_price: float, last_price: float):
@@ -437,6 +495,8 @@ class FundTracker:
                 argument.
         """
 
+        log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
+
         first_price, last_price = float(first_price), float(last_price)
 
         if first_price == last_price:
@@ -446,6 +506,8 @@ class FundTracker:
             difference = -abs(difference)
         elif first_price < last_price:  # Percentage increase.
             difference = (last_price - first_price) / last_price * 100
+
+        log.debug(f'Calculate percentage (percentage: {difference}) complete.')
 
         return difference
 
@@ -462,6 +524,8 @@ class FundTracker:
             fund (True): True if successful, False otherwise.
         """
 
+        log.debug(f'Add fund ({symbol}).')
+
         return self.instantiate_fund(symbol=symbol.upper(), name=name)
 
     def main_event_loop(self):
@@ -477,10 +541,9 @@ class FundTracker:
             None
         """
 
-        log.debug('Entering Main Event Loop...')
+        log.debug('Main Event Loop...')
 
-
-        log.debug('Main Event Loop has ended.')
+        log.debug('Main Event Loop complete.')
 
         return
 
@@ -491,13 +554,17 @@ class FundTracker:
             anything (str): String in which to print to screen.
         """
 
+        log.debug('Print to screen...')
+
         print(anything)
+
+        log.debug('Print to screen complete.')
 
 
 def parse_args(argv=sys.argv):
     """Setup shell environment to run program."""
 
-    log.debug('parse_args...')
+    log.debug('Parse_args...')
 
     # Program description.
     parser = argparse.ArgumentParser(
@@ -522,7 +589,6 @@ def parse_args(argv=sys.argv):
         default=False
     )
 
-    # TODO (GS): Fix to allow absence of optional argument.
     parser.add_argument(
         '-a',
         '--add',
@@ -541,17 +607,9 @@ def parse_args(argv=sys.argv):
         metavar='Symbol'
     )
 
-    # parser.add_argument(
-    #     '-f',
-    #     '--fund',
-    #     help='Show information of individual fund. OPTIONAL: d, w, y.'
-    #
-    # )
-
     args = parser.parse_args()  # Collect arguments.
 
-    log.debug(f'args: {args}')
-    log.debug('parse_args complete.')
+    log.debug(f'Parse_args complete. Args: {args}')
 
     return args
 
@@ -566,20 +624,14 @@ def run_application(args):
         None
     """
 
-    log.debug(args)
+    log.debug('Run application...')
 
     # Skip instantiating Application if self testing is selected.
     if args.test:
-        log.debug('Begin unittests...')
-
-        self_test()  # Test application.py
-
-        log.debug('Unittests complete.')
-
+        self_test()
         return
 
     ft = FundTracker()  # Begin application instance.
-    log.debug('Application instantiated.')
 
     if args.getall:
         funds = ft.generate_all_fund_perf_str()
@@ -602,6 +654,8 @@ def run_application(args):
     ft.main_event_loop()
     ft.save()
 
+    log.debug('Run application complete.')
+
     return
 
 
@@ -619,16 +673,19 @@ def self_test():
 
     import test_financeapp
 
+    log.debug('Self test...')
+
     # Conduct unittest.
     suite = unittest.TestLoader().loadTestsFromModule(test_financeapp)
     unittest.TextTestRunner(verbosity=2).run(suite)
+
+    log.debug('Self test complete.')
 
 
 def test():
     """For development level module testing."""
 
-    ft = FundTracker()
-    ft.save()
+    pass
 
 
 def main():
@@ -655,6 +712,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # test()
-
-

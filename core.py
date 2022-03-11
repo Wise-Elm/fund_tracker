@@ -55,6 +55,8 @@ class Fund:
             formatted_str (str): String representing Fund.
         """
 
+        log.debug(f'__str__ ({self.__repr__()})...')
+
         blank = ''
         if self.dates_prices[-1][1]:
             formatted_price = '{:.2f}'.format(self.dates_prices[-1][1])
@@ -65,6 +67,9 @@ class Fund:
             f'{self.symbol} - {self.name or blank}\n' \
             f'{self.currency} - {self.instrument_type}\n' \
             f'Latest price: {self.dates_prices[-1][0]} - ${formatted_price}'
+
+        log.debug(f'__str__ ({self.__repr__()}) complete...')
+
         return formatted_str
 
     def __repr__(self):
@@ -77,13 +82,30 @@ class Fund:
             self.symbol (str): The symbol for the Fund.
         """
 
+        log.debug(f'__repr__ ({self.symbol}) complete.')
+
         return self.symbol
 
     def __eq__(self, other):
-        if other is type(Fund):
+
+        log.debug(f'__eq__ (self: {self.__repr__()}, other: {other})...')
+
+        if other is type(Fund):  # Compare if type(other) is Fund.
+            log.debug(f'__eq__ (other type = {type(other)}, '
+                      f'self is other = '
+                      f'{True if self.symbol == other.symbol else False}')
             return True if self.symbol == other.symbol else False
-        elif isinstance(other, str):
+
+        elif isinstance(other, str):  # Compare if type(other) is str.
+            log.debug(f'__eq__ (other type = {type(other)}, '
+                      f'self is other = '
+                      f'{True if self.symbol == other else False}')
             return True if self.symbol == other else False
+
+        else:  # When type other is not a legal type. ie. a Fund or str.
+            msg = f'Type {type(other)} is not a legally comparable type.'
+            log.warning(msg)
+            raise CoreError(msg)
 
 
 def self_test():
