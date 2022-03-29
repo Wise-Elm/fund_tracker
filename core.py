@@ -1,6 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""This module provides object classes for financeapp.py.
+
+Module performs a self test when called directly.
+
+Attributes:
+    CORE_LOG_LEVEL: Default log level when this module is called directly.
+    DATE_FORMAT: Format for working with dates. (yyyy-mm-dd).
+    DEFAULT_CORE_LOG_FILENAME: Default filename for logging when module called directly.
+    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+
+Composition Attributes:
+    Line length = 88 characters.
+"""
+
 
 import logging
 import uuid
@@ -8,9 +22,9 @@ from datetime import datetime
 from logging import handlers
 
 
+CORE_LOG_LEVEL = logging.WARNING
 DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_CORE_LOG_FILENAME = 'core.log'  # Used when __name__ == '__main__'
-CORE_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
 
 # Configure logging.
@@ -87,10 +101,21 @@ class Fund:
         return self.symbol
 
     def __eq__(self, other):
+        """Determine the equality of self and other.
+
+        Other can be a Fund object or a string representing a fund symbol.
+
+        Args:
+            other (Fund obj, OR str): Determine the equality of self and other based on
+            if Fund.symbol == other.symbol, or if Fund.symbol == other.
+
+        Returns:
+            True if found to be the same, False otherwise.
+        """
 
         log.debug(f'__eq__ (self: {self.__repr__()}, other: {other})...')
 
-        if other is type(Fund):  # Compare if type(other) is Fund.
+        if isinstance(other, Fund):  # Compare if type(other) is Fund.
             log.debug(f'__eq__ (other type = {type(other)}, '
                       f'self is other = '
                       f'{True if self.symbol == other.symbol else False}')
@@ -138,7 +163,7 @@ if __name__ == '__main__':
     # Configure Rotating Log. Only runs when module is called directly.
     handler = handlers.RotatingFileHandler(
         filename=DEFAULT_CORE_LOG_FILENAME,
-        maxBytes=100**3,
+        maxBytes=100**3,  # 0.953674 Megabytes.
         backupCount=1
     )
     formatter = logging.Formatter(

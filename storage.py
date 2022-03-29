@@ -1,6 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""This module provides storage and loading functionality to financeapp.py.
+
+Module performs a self test when called directly.
+
+Attributes:
+    CORE_LOG_LEVEL: Default log level when this module is called directly.
+    CSV_STORAGE_FIELDS: Default storage headers for .csv files.
+    DEFAULT_STORAGE_LOG_FILENAME: Default filename for logging when module called
+        directly.
+    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+
+    Composition Attributes:
+    Line length = 88 characters.
+"""
+
 
 import csv
 import logging
@@ -9,11 +24,11 @@ from logging import handlers
 from os.path import exists
 
 
-DEFAULT_DATA_FILE = 'data.csv'
-DEFAULT_CORE_LOG_FILENAME = 'storage.log'  # Used when __name__ == '__main__'
 CORE_LOG_LEVEL = logging.WARNING
-RUNTIME_ID = uuid.uuid4()
 CSV_STORAGE_FIELDS = ('symbol', 'name')
+DEFAULT_STORAGE_LOG_FILENAME = 'storage.log'  # Used when __name__ == '__main__'
+RUNTIME_ID = uuid.uuid4()
+
 
 # Configure logging.
 log = logging.getLogger(__name__)
@@ -34,16 +49,16 @@ class Repo:
             be saved and loaded to default file path.
     """
 
-    def __init__(self, load_data: bool, data_file: str):
-        self.load_data = load_data or []
-        self.data_file = data_file or DEFAULT_DATA_FILE
+    def __init__(self, load_data, data_file):
+        self.load_data = load_data or None
+        self.data_file = data_file
         self.symbols_names = []
         self.fields = CSV_STORAGE_FIELDS
 
         if load_data:
             self.load(self.data_file)
 
-    def save(self, data, data_file):
+    def save(self, data, data_file=None):
         """Save application data.
 
         Must be .csv file type. Saves fund symbol and name if name is populated.
@@ -56,8 +71,8 @@ class Repo:
                 default file name.
         """
 
-        if not data_file:
-            data_file = DEFAULT_DATA_FILE
+        if data_file is None:
+            data_file = self.data_file
 
         # Confirm file type is legal.
         if data_file[-4:] != '.csv':
@@ -179,8 +194,8 @@ if __name__ == '__main__':
 
     # Configure Rotating Log. Only runs when module is called directly.
     handler = handlers.RotatingFileHandler(
-        filename=DEFAULT_CORE_LOG_FILENAME,
-        maxBytes=100**3,
+        filename=DEFAULT_STORAGE_LOG_FILENAME,
+        maxBytes=100**3,  # 0.953674 Megabytes.
         backupCount=1
     )
     formatter = logging.Formatter(

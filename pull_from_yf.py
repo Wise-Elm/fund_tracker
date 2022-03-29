@@ -4,21 +4,14 @@
 
 import logging
 import uuid
-from datetime import date
 from logging import handlers
-from dateutil.relativedelta import relativedelta
 
 from yahoofinancials import YahooFinancials
 
 
 DEFAULT_CORE_LOG_FILENAME = 'pull_data'  # Used when __name__ == '__main__'
-CORE_LOG_LEVEL = logging.WARNING
+CORE_LOG_LEVEL = logging.DEBUG
 RUNTIME_ID = uuid.uuid4()
-
-CURRENT_DATE = date.today().__str__()
-YEAR_AND_WEEK_AGO_DATE = (date.today() - relativedelta(years=1, weeks=1)).__str__()
-MONTH_AGO_DATE = (date.today() - relativedelta(months=1)).__str__()
-WEEK_AGO_DATE = (date.today() - relativedelta(weeks=1)).__str__()
 
 # Configure logging.
 log = logging.getLogger(__name__)
@@ -29,62 +22,42 @@ class PullDataError(RuntimeError, KeyError, ValueError, BaseException):
     """Base class for exceptions arising from this module."""
 
 
-def get_fund_data(fund: str, start_date: str=YEAR_AND_WEEK_AGO_DATE):
+def get_fund_data(fund, start_date, end_date):
     """Retrieve data for fund.
-
-
 
     Args:
         fund (str): First parameter. Fund symbol. ex. 'FBGRX'.
-        start_date (str): Second parameter. Start date (yyyy-mm-dd) for data
-            retrieval. Defaults to 1 year & 1 week prior to current date.
+        start_date (str): Second parameter. Start date (yyyy-mm-dd) for data retrieval.
+        end_date (str): Third parameter. End date (yyyy-mm-dd) for data retrieval.
 
     Returns:
         yearly_close (dict) or None. Dictionary of fund data or None.
     """
 
+    log.debug(f'Getting data for fund: {fund}, between {start_date} and {end_date}...')
+
+    yearly_close = None
+
     try:
         yf = YahooFinancials(fund)
         yearly_close = yf.get_historical_price_data(
             start_date=start_date,
-            end_date=CURRENT_DATE,
-            time_interval='daily'
-        )
-    except PullDataError:
-        msg = f'Error pulling data from source for {fund}.'
-        log.warning(msg)
-    finally:
-        return None or yearly_close
-
-
-def get_custom_fund_data(fund, start_date: date, end_date: date):
-    """Retrieve data for fund between argument dates.
-
-    Args:
-        fund (str): First parameter. Fund symbol. ex. 'FBGRX'.
-        start_date (date object): date object for start date.
-        end_date (date object): date object for end date.
-
-    Returns:
-        close (dict) or None: Retrieve a dictionary of fund date between the
-            argument dates.
-    """
-
-    start_date = start_date.__str__()
-    end_date = end_date.__str__()
-
-    try:
-        yf = YahooFinancials(fund)
-        close = yf.get_historical_price_data(
-            start_date=start_date,
             end_date=end_date,
             time_interval='daily'
         )
+
     except PullDataError:
         msg = f'Error pulling data from source for {fund}.'
         log.warning(msg)
+
     finally:
-        return None or close
+
+        if yearly_close is None:
+            log.debug(f'No data found for fund: {fund} between dates {start_date} and '
+                      f'{end_date}.')
+        else:
+            log.debug(f'Data found for fund: {fund}.')
+            return yearly_close
 
 
 def self_test():

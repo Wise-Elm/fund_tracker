@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""This module is used to tes pull_data.py"""
+"""This module is used to tes pull_from_yf.py"""
 
 import unittest
 
@@ -9,7 +9,7 @@ from financeapp import FundTracker
 
 
 class TestApplication(unittest.TestCase):
-    """Test pull_data.py."""
+    """Test pull_from_yf.py."""
 
     @classmethod
     def setUpClass(cls):

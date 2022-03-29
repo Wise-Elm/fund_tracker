@@ -3,80 +3,39 @@
 
 __version__ = '0.1.0'
 
-import copy
-
-"""Application working title: financeapp.
-
-Author:
-    Graham Steeds
+"""Application.
 
 Context:
-    An application derived to learn python. Specifically to incorporate foreign modules 
-    while manage dependencies and abstraction leak.
 
 Description:
-    financeapp provides the user with an easy way to track the current and past history 
-    of money market accounts. The user may create a list of funds to save, incorporating 
-    optional custom fund names, and view the financial history of those funds. 
-    
-    Users are able to add funds including choosing what to name a fund, delete funds, 
-    edit funds, and view data from custom date ranges.
-    
-    financeapp is designed to be easily expandable, being able to quickly incorporate 
-    new financial data applications in order to retrieve data.
-
-Extendability:
-    financeapp is setup to allow easy extendability in the form of specifying custom 
-    file names for saving and loading data, with the ability of have multiple data sets.
-    
-    Adding modules for retrieving data from different sources is easily incorporated. 
-    To do so one must include the module in the FundTracker class attribute 
-    self.AVAILABLE_DATA_SOURCES, so that a name for the data sources is the key and a 
-    FundTracker method is the value. A custom method that handles one fund must be 
-    created to pull data from the new module.
-    
-    The data returned must be a list of data for each fund where:
-        list[0] = symbol (ex. 'FXAIX')
-        list[1] = denomination (ex. 'USD')
-        list[2] = 'type' (ex. 'MUTUALFUND')
-        list[3] = [date, closing price] 
-            (ex. [[2021-03-09, 166.02999877929688], [[2021-03-10, 164.02999877929688]]], 
-            where the list is ordered by date, the most current date being list[:-1].)
-            
-    When these parameters are met financeapp can work with any outside data gathering 
-    module.
 
 Attributes:
-
-    DEFAULT_DATA_FILE: Default file name for saving and loading data.
-    DEFAULT_DATA_SOURCE: Default source for retrieving data.
-    DEFAULT_LOG_FILENAME: Default file path for application wide logging.
-    DEFAULT_LOG_LEVEL: Default log level.
-    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+    DEFAULT_LOG_FILENAME (str): Default file path for application wide logging.
+    DEFAULT_LOG_LEVEL (:obj: 'int'): Integer represents a value which assigns a log 
+        level from logging.
+    RUNTIME_ID (:obj: uuid): Generate a unique uuid object.
 
 Composition Attributes:
     Line length = 88 characters.
 """
 
 import argparse
-import concurrent.futures
 import logging
 import sys
-import time
 import uuid
 from datetime import date, datetime, timedelta
-from dateutil.relativedelta import relativedelta
 from logging import handlers
 
-from core import Fund
+from core import Fund, DATE_FORMAT
 from controller_for_yf import get_yf_fund_data
 from storage import Repo
 
 DEFAULT_DATA_FILE = 'data.csv'
-DEFAULT_DATA_SOURCE = 'yahoofinance'
 DEFAULT_LOG_FILENAME = 'financeapp.log'
 DEFAULT_LOG_LEVEL = logging.DEBUG
+DEFAULT_DATA_SOURCE = 'yahoofinance'
 RUNTIME_ID = uuid.uuid4()
+
 
 # Configure logging.
 log = logging.getLogger()
@@ -88,6 +47,7 @@ class FundTrackerApplicationError(RuntimeError):
 
 
 class FundTracker:
+
     """Application for tracking and displaying stock market data.
 
     Class level parameters:
@@ -115,58 +75,19 @@ class FundTracker:
         self.funds = self.instantiate_saved_funds(data_source)  # [Fund objects]
 
     def instantiate_saved_funds(self, data_source=DEFAULT_DATA_SOURCE):
-        """Generate a list of Fund objects based on saved data.
-
-        data_source indicates which application to use when getting fund data.
-
-        Multithreading incorporated due to much of the processing time spend waiting
-        on IO bound operations, such as waiting for data_source to return fund data.
-
-        Args:
-            data_source (str): OPTIONAL. Uses a default data source when argument is
-                blank.
-
-        Returns:
-            instantiated_funds ([fund obj]): List of Fund objects.
-        """
-
+        
         log.debug(f'Instantiate saved funds. Data source: {data_source}...')
 
-        start = time.perf_counter()  # Time operation.
+        instantiated_funds = []  # List of Fund objects.
 
-        # Create lst for the maper to iterate through.
-        # [[symbol, name, data_source]]
-        args = [(s_n[0], s_n[1] or None, data_source) for s_n in self.symbols_names]
-
-        # Setup multithreading with maper.
-        # Map arguments in args for execution by individual threads.
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = executor.map(self._separate_args, args)
-
-        # Yield data from results generator.
-        instantiated_funds = [result for result in results]
-
-        end = time.perf_counter()
-        total_time = round(end - start, 2)
-
-        log.debug(f'Instantiate saved funds completed in {total_time} seconds(s).')
-
+        # Instantiate each saved fund and
+        for symbol_name in self.symbols_names:
+            fund = self.instantiate_fund(*symbol_name)
+            instantiated_funds.append(fund)
+        
+        log.debug('Instantiate saved funds complete.')
+        
         return instantiated_funds
-
-    def _separate_args(self, args):
-        """Unpack arguments and call self.instantiate_fund().
-
-        Helper method for self. instantiate_saved_funds(), since thread maper in
-        method cannot unpack args on its own.
-
-        Args:
-            args (list): List of arguments for self.instantiate_fund().
-
-        Returns:
-            (obj): Instantiated Fund object.
-        """
-
-        return self.instantiate_fund(*args)
 
     def instantiate_fund(self, symbol, name=None, data_source=DEFAULT_DATA_SOURCE):
         """Instantiate a Fund object.
@@ -188,20 +109,25 @@ class FundTracker:
         log.debug(f'Instantiate fund using symbol: {symbol}, name: {name}, '
                   f'data_source: {data_source}...')
 
-        # Will raise exception if data_source is not legal.
-        self.check_data_source(data_source)
+        try:
+            # Will raise exception if data_source is not legal.
+            self.check_data_source(data_source)
 
-        # Identify method connecting to external module for pulling data.
-        source_method = self.AVAILABLE_DATA_SOURCES[data_source]
+        except FundTrackerApplicationError:
+            return None
 
-        data = source_method(symbol)  # Get fund data from source method.
-        if name:  # Add optional name parameter string.
-            data.append(name)
-        fund = Fund(*data)  # Instantiate fund object.
+        finally:
+            # Identify method connecting to external module for pulling data.
+            source_method = self.AVAILABLE_DATA_SOURCES[data_source]
 
-        log.debug(f'Instantiate fund ({fund}) complete.')
+            data = source_method(symbol)  # Get fund data from source method.
+            if name:  # Add optional name parameter string.
+                data.append(name)
+            fund = Fund(*data)  # Instantiate fund object.
 
-        return fund
+            log.debug(f'Instantiate fund ({fund}) complete.')
+
+            return fund
 
     def check_data_source(self, data_source):
         """Determine legality of data_source.
@@ -229,20 +155,11 @@ class FundTracker:
             log.warning(msg)
             raise FundTrackerApplicationError(msg)
 
-    def pull_yahoofinancial(self, symbol, start_date=None, end_date=None):
+    def pull_yahoofinancial(self, symbol):
         """Get fund data from yahoofinancial module.
 
-        When start_date and end_date are included method will return data for fund
-        between those ranges.
-
         Args:
-            symbol (str): First parameter. Symbol of fund on which to pull data. Ex:
-                FXAIX.
-            start_date (str): Second parameter. OPTIONAL. 'yyyy-mm-dd'. Start date for
-                custom date range. Will default to one year and one week prior to
-                current date.
-            end_date (str): Third paramter. OPTIONAL. 'yyyy-mm-dd'. End date for custom
-                date range. Will default to current date.
+            symbol (str): Symbol of fund on which to pull data. Ex: FXAIX.
 
         Returns:
             data (list[symbol, denomination, type, list[[date, price]]]):
@@ -251,16 +168,7 @@ class FundTracker:
 
         log.debug(f'Pulling data for fund ({symbol}) from yahoofinancial...')
 
-        # None because second argument in get_yf_fund_data() is optional name which is
-        # not currently being used.
-        args = [symbol, None]
-        if start_date:
-            args.append(start_date)
-        if end_date:
-            args.append(end_date)
-
-        # Pull data from yahoofinancial.
-        data = get_yf_fund_data(*args)
+        data = get_yf_fund_data(symbol)
 
         log.debug(f'Pulling data for fund ({symbol}) from yahoofinancial complete.')
 
@@ -284,11 +192,6 @@ class FundTracker:
 
         log.debug('Save...')
 
-        # Check for unique data_file.
-        if not data_file:
-            data_file = DEFAULT_DATA_FILE
-
-        # Check for unique data.
         if not data:
             data = self.funds
         self.repo.save(data, data_file)
@@ -411,131 +314,67 @@ class FundTracker:
 
         return performance
 
-    def custom_range_performance(self, fund, start_date, end_date):
-        """Get the performance of a fund over a specified date range.
-
-        Args:
-            fund (str): Fund symbol:
-                Example:
-                    'FXAIX'
-            start_date (str): Date in format yyyy-mm-dd.
-            end_date (str): Date in format yyyy-mm-dd.
-
-        Returns:
-            tuple(
-                difference:float,
-                start_date:datetime object,
-                end_date:datetime object,
-                fund:Fund object
-            )
-        """
-
-        log.debug(f'Custom range performance ({fund})...')
-
-        today = date.today()
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-        # Raise exception if end date is the same or before start date.
-        if end_date <= start_date:
-            msg = f'Start date({start_date.__str__()}) must be before end date ' \
-                  f'({end_date.__str__()}).'
-            log.warning(msg)
-            raise FundTrackerApplicationError(msg)
-
-        # Raise exception if end date is in the future.
-        if end_date > today:
-            msg = f'End date ({end_date.__str__()}) is out of range (in the future).'
-            log.warning(msg)
-            raise FundTrackerApplicationError(msg)
-
-        # Include an additional month before the start date to make up for dates where
-        # pricing and/or dates are not available.
-        start_plus_month = start_date - relativedelta(months=1)
-
-        custom_data = self.pull_yahoofinancial(fund,
-                                               start_plus_month.__str__(),
-                                               end_date.__str__())
-
-        # Replace date_price list in custom_date so that the first item in the list
-        # is the best usable start date, and the last item in the list is the best
-        # usable end date.
-        custom_data[3] = self.get_closest_dates(custom_data[3], start_date, end_date)
-
-        # Instantiate as fund object.
-        fund = Fund(*custom_data)
-
-        # Get dates and prices for comparison.
-        oldest_price, newest_price = fund.dates_prices[0][1], fund.dates_prices[-1][1]
-
-        # Get percentage difference between first and last dates.
-        difference = self.calculate_percentage(oldest_price, newest_price)
-
-        msg = fund.__str__() + '\nPerformance between {} and {}: ' \
-                               '{:.2f}%.'.format(start_date, end_date, difference)
-
-        log.debug(f'Custom range performance ({fund}) complete.')
-
-        return msg
-
-    def get_closest_dates(self, dates_prices, start_date, end_date):
-        """Finds the closest valid dates on or before argument dates.
-
-         Will view a date as invalid if it is after the argument date or if it contains
-         pricing information of None.
-
-         Args:
-             dates_prices (list[date(str), price(str)]): First parameter. List of dates
-                and prices.
-             start_date (datetime obj): Second parameter. Ideal starting date.
-             end_date (datetime obj): Thirt parameter. Idea ending date.
-
-         Returns:
-             dates_prices (list[date(str), price(str)]): List of dates and associated
-                prices where the first and last items best fit the start_date and
-                end_date arguments respectively.
-         """
-
-        log.debug(f'Finding closest dates for start date ({start_date.__str__()}), and '
-                  f'end date ({end_date.__str__()})...')
-
-        # Find an end date on or before the requested end date that has both date and
-        # price information.
-        end_found = False
-        while not end_found:
-            if datetime.strptime(dates_prices[-1][0], '%Y-%m-%d').date() > end_date:
-                dates_prices.pop()
-                continue
-            elif dates_prices[-1][1] is None:
-                dates_prices.pop()
-            else:
-                end_found = True
-
-        # Find a start date on or before the requested start date that has both date and
-        # price information.
-
-        # Find index of start date in dates_prices or closest dates before is start date
-        # does not exist.
-        start_index = 0
-        while datetime.strptime(dates_prices[start_index][0], '%Y-%m-%d').date() < \
-            start_date:
-            start_index += 1
-
-        start_found = False
-        while not start_found:
-            if dates_prices[start_index][1] is None:
-                start_index -= 1
-            else:
-                start_found = True
-
-        # Eliminate dates outside desired ranges as they are unneeded.
-        dates_prices = dates_prices[start_index:]
-
-        log.debug(f'Closest date to start date ({start_date.__str__()} --> '
-                  f'{dates_prices[0][0]}), and end date ({end_date.__str__()}, '
-                  f'{dates_prices[-1][0]}) found.')
-
-        return dates_prices
+    # TODO (GS): Fix this method.
+    # def custom_range_performance(self, fund, start_date, end_date):
+    #     """Get the performance of fund over a specified date range.
+    #
+    #     Args:
+    #         fund (str): Fund symbol:
+    #             Example:
+    #                 'FXAIX'
+    #         start_date (str): Date in format yyyy-mm-dd.
+    #         end_date (str): Date in format yyyy-mm-dd.
+    #
+    #     Returns:
+    #         tuple(
+    #             difference:float,
+    #             start_date:datetime object,
+    #             end_date:datetime object,
+    #             fund:Fund object
+    #         )
+    #     """
+    #
+    #     log.debug(f'Custom range performance ({fund})...')
+    #
+    #     # Change start_date and end_date from strings to datetime objects to
+    #     # enable date range comparisons.
+    #     start_date = datetime.strptime(start_date, DATE_FORMAT).date()
+    #     end_date = datetime.strptime(end_date, DATE_FORMAT).date()
+    #
+    #     start_date_price = None  # Later populated with float.
+    #     end_date_price = None  # Later populated with float.
+    #     target_fund = None  # Later populated with Fund object.
+    #
+    #     # See if fund is already an object.
+    #     if fund in self.funds:
+    #         target_fund = self.funds[self.funds.index(fund)]
+    #         most_current_date = target_fund.dates_prices[0][0]
+    #
+    #         # Use last available trading date if end date is past the most
+    #         # current data.
+    #         if end_date >= most_current_date or not end_date:
+    #             end_date_price = most_current_date
+    #
+    #         # Pull start_date_price from stored data if date is stored.
+    #         if start_date > target_fund.dates_prices[:-1][0][0]:
+    #             for date_price in target_fund.dates_prices:
+    #                 if date_price[0] == start_date:
+    #                     start_date_price = target_fund.dates_prices
+    #
+    #     # When start_date_price is None then retrieve needed data using
+    #     # the pull_data module.
+    #     if start_date_price is None:
+    #         data = get_custom_fund_data(fund, start_date, end_date)
+    #         parsed_data = self.parse_fund_data(data)
+    #         target_fund = Fund(*parsed_data)  # create Fund w/date from desired range.
+    #         start_date_price = target_fund.dates_prices[-1][1]
+    #         end_date_price = target_fund.dates_prices[0][1]
+    #
+    #     difference = self.calculate_percentage(start_date_price, end_date_price)
+    #
+    #     log.debug(f'Custom range performance ({fund}) complete.')
+    #
+    #     return difference, start_date, end_date, fund
 
     def day_performance(self, fund):
         """Get the performance of fund period between last open and close.
@@ -674,8 +513,7 @@ class FundTracker:
         date_found = False
         while not date_found:
             for date_, price in reversed(fund.dates_prices):
-                # If search date not available get the closest date before .
-                if date_ == search_date or date_ < search_date:
+                if date_ == search_date:
                     date_found = True
                     break
                 else:
@@ -740,11 +578,7 @@ class FundTracker:
 
         log.debug(f'Add fund using symbol: {symbol}, name: {name}...')
 
-        # Instantiate Fund object.
         fund = self.instantiate_fund(symbol=symbol.upper(), name=name)
-
-        # Add fund to list of funds.
-        self.funds.append(fund)
 
         log.debug(f'Add fund ({fund}) complete.')
 
@@ -834,15 +668,6 @@ def parse_args(argv=sys.argv):
         metavar='Symbol'
     )
 
-    parser.add_argument(
-        '-c',
-        '--custom',
-        help='Get price difference for custom date range and fund. Date: (yyyy-mm-dd)',
-        nargs=3,
-        default=False,
-        metavar=('Symbol', 'Start date', 'End date'),
-    )
-
     args = parser.parse_args()  # Collect arguments.
 
     log.debug(f'Parse_args complete. Args: {args}')
@@ -886,10 +711,6 @@ def run_application(args):
         ft.save()
         return
 
-    elif args.custom:
-        ft.print_to_screen(ft.custom_range_performance(*args.custom))
-        return
-
     # Run Application main event loop when no args are True.
     ft.main_event_loop()
     ft.save()
@@ -926,8 +747,8 @@ def test():
     """For development level module testing."""
 
     ft = FundTracker()
-    s = ft.generate_all_fund_perf_str()
-    ft.print_to_screen(s)
+    funds = ft.generate_all_fund_perf_str()
+    print(funds)
 
 
 def main():
@@ -946,17 +767,12 @@ def main():
 
     log.debug('main...')
 
-    start_time = time.perf_counter()  # Set initial time to time operations.
-
     args = parse_args()
     run_application(args)
 
-    end_time = time.perf_counter()  # Set end time for timing operations.
-
-    log.debug(f'main completed in {end_time - start_time} seconds.')
+    log.debug('main complete.')
 
 
 if __name__ == '__main__':
     main()
-    # self_test()
     # test()
