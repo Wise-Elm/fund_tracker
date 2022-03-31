@@ -1,7 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 
 import logging
+import threading
+import time
 import uuid
-from datetime import date, datetime
+from datetime import date
 from dateutil.relativedelta import relativedelta
 from logging import handlers
 
@@ -9,6 +14,7 @@ from pull_from_yf import get_fund_data
 
 DEFAULT_LOG_FILENAME = 'controller_for_yf'
 DEFAULT_LOG_LEVEL = logging.DEBUG
+DEFAULT_THREAD_TIMEOUT = 1  # In seconds.
 RUNTIME_ID = uuid.uuid4()
 
 CURRENT_DATE = date.today().__str__()
@@ -20,6 +26,73 @@ WEEK_AGO_DATE = (date.today() - relativedelta(weeks=1)).__str__()
 # Configure logging.
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
+
+
+class ControllerForYfError(RuntimeError):
+    """Base class for exceptions arising from this module."""
+
+
+class ReturnThreadValue(threading.Thread):
+    """Child class of threading.Thread.
+
+    Constructed to provide a return value to parent.join() for thread of self.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.result = None  # Add self.result for return value.
+
+        """Should always be called with keyword arguments from parent class.
+        
+        Intended arguments listed. Additional arguments available through parent class.
+        
+        Args:
+            target (callable obj): Function to be called by run() method.
+            args (list[arguments]): List of arguments to be supplied to target method.
+            name (str): OPTIONAL. Name for thread.
+        """
+
+    def run(self):
+        """Represents the activity of the thread.
+
+        Adapted from parent class to provide self.result with a return value.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            ControllerForYfError (Exception): Raised when self._target (function to be
+                called) is not found.
+        """
+
+        if self._target is not None:
+            # Identify return value for target function.
+            self.result = self._target(*self._args, **self._kwargs)
+        else:
+            msg = f'Target function for thread not found.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+    def join(self, *args, **kwargs):
+        """Wait until thread terminates or timeout reached.
+
+        Adds functionality to parent class by provide a return value to thread upon
+        termination.
+
+        Args:
+            timeout (float): OPTIONAL. Number of maximum seconds before a return.
+
+        returns:
+            self.result (return value): Return value self._target (callable function).
+                Defaults to None if timeout reached before callable function returns a
+                value.
+        """
+
+        super().join(*args, **kwargs)
+        return self.result
 
 
 def get_yf_fund_data(
@@ -42,19 +115,38 @@ def get_yf_fund_data(
 
     Returns:
         desired_data (list[symbol, denomination, type, list[[date, price]], name]):
-            List of fund data.
+            List of fund data or None.
     """
 
     log.debug(f'get_yf_fund_data (symbol: {symbol}, name: {name})...')
 
-    # Collect data between date ranges from yahoofinancial.
-    all_data = get_fund_data(symbol, start_date, end_date)
+    # Setup thread instance to call intended function with args.
+    thread = ReturnThreadValue(
+        target=get_fund_data,
+        args=[symbol, start_date, end_date],
+        name=symbol
+    )
 
-    if all_data is None:
+    start_time = time.perf_counter()  # Time operation.
+
+    thread.start()  # Start thread.
+
+    # Result from callable function, or None if DEFAULT_THREAD_TIMEOUT is reached.
+    result = thread.join(DEFAULT_THREAD_TIMEOUT)
+
+    end_time = time.perf_counter()
+    total_time = round(end_time - start_time, 2)
+
+    log.debug(f'Thread-{thread.name} finished in {total_time} seconds.')
+
+    # Return Error is thread timed out.
+    if result is None:
+        msg = f'Thread for {symbol} timed out.'
+        log.warning(msg)
         return None
 
-    # Parse all_data for desired data.
-    desired_data = parse_fund_data(all_data)
+    # Put data into acceptable format for caller.
+    desired_data = parse_fund_data(result)
 
     # Append custom saved name for fund.
     if name:
@@ -138,7 +230,7 @@ if __name__ == '__main__':
     # Configure Rotating Log. Only runs when module is called directly.
     handler = handlers.RotatingFileHandler(
         filename=DEFAULT_LOG_FILENAME,
-        maxBytes=100 ** 3,
+        maxBytes=100 ** 3,  # 0.953674 Megabytes.
         backupCount=1
     )
     formatter = logging.Formatter(

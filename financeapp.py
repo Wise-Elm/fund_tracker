@@ -132,11 +132,12 @@ class FundTracker:
 
         log.debug(f'Instantiate saved funds. Data source: {data_source}...')
 
-        start = time.perf_counter()  # Time operation.
+        start_time = time.perf_counter()  # Time operation.
 
         # Create lst for the maper to iterate through.
         # [[symbol, name, data_source]]
-        args = [(s_n[0], s_n[1] or None, data_source) for s_n in self.symbols_names]
+        args = [(s_n[0].upper(), s_n[1] or None, data_source)
+                for s_n in self.symbols_names]
 
         # Setup multithreading with maper.
         # Map arguments in args for execution by individual threads.
@@ -144,12 +145,14 @@ class FundTracker:
             results = executor.map(self._separate_args, args)
 
         # Yield data from results generator.
-        instantiated_funds = [result for result in results]
+        instantiated_funds = \
+            [result for result in results
+             if result is not None and result is not RuntimeError]
 
-        end = time.perf_counter()
-        total_time = round(end - start, 2)
+        end_time = time.perf_counter()
+        total_time = round(end_time - start_time, 2)
 
-        log.debug(f'Instantiate saved funds completed in {total_time} seconds(s).')
+        log.debug(f'Instantiate saved funds completed in {total_time} seconds.')
 
         return instantiated_funds
 
@@ -181,8 +184,8 @@ class FundTracker:
                 which to pull fund data.
 
         Returns:
-            (fund or None): fund when data_source is legal, and fund is found matching
-                the symbol parameter. None when an error occurs.
+            (fund or None): fund when data_source is legal, and fund is found
+            matching the symbol parameter. None otherwise.
         """
 
         log.debug(f'Instantiate fund using symbol: {symbol}, name: {name}, '
@@ -194,7 +197,12 @@ class FundTracker:
         # Identify method connecting to external module for pulling data.
         source_method = self.AVAILABLE_DATA_SOURCES[data_source]
 
-        data = source_method(symbol)  # Get fund data from source method.
+        # Get fund data from source method. Will return None if data is not available.
+        data = source_method(symbol)
+
+        if data is None:
+            return None
+
         if name:  # Add optional name parameter string.
             data.append(name)
         fund = Fund(*data)  # Instantiate fund object.
@@ -837,7 +845,7 @@ def parse_args(argv=sys.argv):
     parser.add_argument(
         '-c',
         '--custom',
-        help='Get price difference for custom date range and fund. Date: (yyyy-mm-dd)',
+        help='Get price difference for fund between date range. Date: (yyyy-mm-dd)',
         nargs=3,
         default=False,
         metavar=('Symbol', 'Start date', 'End date'),
@@ -925,9 +933,7 @@ def self_test():
 def test():
     """For development level module testing."""
 
-    ft = FundTracker()
-    s = ft.generate_all_fund_perf_str()
-    ft.print_to_screen(s)
+    pass
 
 
 def main():
@@ -952,11 +958,10 @@ def main():
     run_application(args)
 
     end_time = time.perf_counter()  # Set end time for timing operations.
+    total_time = round(end_time - start_time, 2)
 
-    log.debug(f'main completed in {end_time - start_time} seconds.')
+    log.debug(f'main completed in {total_time} seconds.')
 
 
 if __name__ == '__main__':
     main()
-    # self_test()
-    # test()

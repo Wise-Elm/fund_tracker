@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class PullDataError(RuntimeError, KeyError, ValueError, BaseException):
+class PullDataError(RuntimeError):
     """Base class for exceptions arising from this module."""
 
 
@@ -31,33 +31,37 @@ def get_fund_data(fund, start_date, end_date):
         end_date (str): Third parameter. End date (yyyy-mm-dd) for data retrieval.
 
     Returns:
-        yearly_close (dict) or None. Dictionary of fund data or None.
+        fund_data (dict) or None. Dictionary of fund data or None.
     """
 
     log.debug(f'Getting data for fund: {fund}, between {start_date} and {end_date}...')
 
-    yearly_close = None
+    fund_data = None
 
     try:
         yf = YahooFinancials(fund)
-        yearly_close = yf.get_historical_price_data(
+        fund_data = yf.get_historical_price_data(
             start_date=start_date,
             end_date=end_date,
             time_interval='daily'
         )
 
-    except PullDataError:
+    except BaseException as be:
         msg = f'Error pulling data from source for {fund}.'
         log.warning(msg)
+        raise PullDataError(msg)
 
     finally:
 
-        if yearly_close is None:
-            log.debug(f'No data found for fund: {fund} between dates {start_date} and '
-                      f'{end_date}.')
+        if fund_data is None or not fund_data[fund]['prices']:
+            log.warning(f'No data found for fund: {fund} between dates {start_date} '
+                        f'and {end_date}. Possible thread timeout.')
         else:
+            if fund == 'ASDF':
+                print(fund_data)
             log.debug(f'Data found for fund: {fund}.')
-            return yearly_close
+
+        return fund_data
 
 
 def self_test():
@@ -90,7 +94,7 @@ if __name__ == '__main__':
     # Configure Rotating Log. Only runs when module is called directly.
     handler = handlers.RotatingFileHandler(
         filename=DEFAULT_CORE_LOG_FILENAME,
-        maxBytes=100**3,
+        maxBytes=100**3,  # 0.953674 Megabytes.
         backupCount=1
     )
     formatter = logging.Formatter(
