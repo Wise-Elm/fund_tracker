@@ -7,7 +7,7 @@ import unittest
 
 from core import Fund
 from financeapp import FundTracker, FundTrackerApplicationError
-from test_assets import assets
+from test_assets import ASSETS
 
 
 class TestApplication(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestApplication(unittest.TestCase):
 
     def setUp(self):
         self.app = FundTracker(load_data=False)  # Instantiate app without saved data.
-        self.app.symbols_names = assets  # Load test assets as saved data.
+        self.app.symbols_names = ASSETS  # Load test assets as saved data.
         funds = self.app.instantiate_saved_funds()  # Instantiate test assets.
         self.app.funds = funds  # Add instantiated Funds to self.app.funds.
 

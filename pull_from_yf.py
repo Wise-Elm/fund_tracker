@@ -1,6 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""
+Author:
+    Graham Steeds
+
+Context:
+    Used for pulling data from the YahooFinancials module.
+
+Attributes:
+    DEFAULT_LOG_FILENAME: Default filename for logging when module called directly.
+    DEFAULT_LOG_LEVEL: Default log level when this module is called directly.
+    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+
+Composition Attributes:
+    Line length = 88 characters.
+"""
 
 import logging
 import uuid
@@ -9,8 +24,8 @@ from logging import handlers
 from yahoofinancials import YahooFinancials
 
 
-DEFAULT_CORE_LOG_FILENAME = 'pull_data'  # Used when __name__ == '__main__'
-CORE_LOG_LEVEL = logging.DEBUG
+DEFAULT_LOG_FILENAME = 'pull_data.log'  # Used when __name__ == '__main__'
+DEFAULT_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
 
 # Configure logging.
@@ -93,7 +108,7 @@ if __name__ == '__main__':
 
     # Configure Rotating Log. Only runs when module is called directly.
     handler = handlers.RotatingFileHandler(
-        filename=DEFAULT_CORE_LOG_FILENAME,
+        filename=DEFAULT_LOG_FILENAME,
         maxBytes=100**3,  # 0.953674 Megabytes.
         backupCount=1
     )
@@ -103,6 +118,6 @@ if __name__ == '__main__':
     )
     handler.setFormatter(formatter)
     log.addHandler(handler)
-    log.setLevel(CORE_LOG_LEVEL)
+    log.setLevel(DEFAULT_LOG_LEVEL)
 
     self_test()

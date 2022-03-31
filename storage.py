@@ -1,9 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""This module provides storage and loading functionality to financeapp.py.
+"""
+Author:
+    Graham Steeds
 
-Module performs a self test when called directly.
+Context:
+    This module provides storage and loading functionality.
+
+Description:
+    Currently this module provides the functionality to save and load data to .csv
+    files, but it is build to be easily expandable to work with other file types.
 
 Attributes:
     CORE_LOG_LEVEL: Default log level when this module is called directly.
@@ -12,7 +19,7 @@ Attributes:
         directly.
     RUNTIME_ID: Generate a unique uuid object. Used in logging.
 
-    Composition Attributes:
+Composition Attributes:
     Line length = 88 characters.
 """
 

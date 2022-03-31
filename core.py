@@ -1,9 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""This module provides object classes for financeapp.py.
+"""
+Author:
+    Graham Steeds
 
-Module performs a self test when called directly.
+Context:
+    This module provides object classes for financeapp.py.
 
 Attributes:
     CORE_LOG_LEVEL: Default log level when this module is called directly.

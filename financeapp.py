@@ -3,24 +3,25 @@
 
 __version__ = '0.1.0'
 
-import copy
-
 """Application working title: financeapp.
 
 Author:
     Graham Steeds
 
 Context:
-    An application derived to learn python. Specifically to incorporate foreign modules 
-    while manage dependencies and abstraction leak.
+    An application derived to learn python and be ideal for use as a Cron Job.
+    
+    This module incorporates foreign modules to retrieve data, and handles simultaneous 
+    data collection through the use of Multithreading while managing dependencies, 
+    abstraction leaks, and errors.
 
 Description:
     financeapp provides the user with an easy way to track the current and past history 
     of money market accounts. The user may create a list of funds to save, incorporating 
     optional custom fund names, and view the financial history of those funds. 
     
-    Users are able to add funds including choosing what to name a fund, delete funds, 
-    edit funds, and view data from custom date ranges.
+    Users are able to add funds including choosing what to name a fund, as well as the 
+    the ability to delete, edit, and view data from custom date ranges.
     
     financeapp is designed to be easily expandable, being able to quickly incorporate 
     new financial data applications in order to retrieve data.
@@ -32,7 +33,7 @@ Extendability:
     Adding modules for retrieving data from different sources is easily incorporated. 
     To do so one must include the module in the FundTracker class attribute 
     self.AVAILABLE_DATA_SOURCES, so that a name for the data sources is the key and a 
-    FundTracker method is the value. A custom method that handles one fund must be 
+    FundTracker method is the value. A custom method that handles the fund must be 
     created to pull data from the new module.
     
     The data returned must be a list of data for each fund where:
@@ -47,7 +48,6 @@ Extendability:
     module.
 
 Attributes:
-
     DEFAULT_DATA_FILE: Default file name for saving and loading data.
     DEFAULT_DATA_SOURCE: Default source for retrieving data.
     DEFAULT_LOG_FILENAME: Default file path for application wide logging.
@@ -56,6 +56,10 @@ Attributes:
 
 Composition Attributes:
     Line length = 88 characters.
+    
+TODO:
+    Incorporate more robust error and exception handling.
+    Develop unittesting.
 """
 
 import argparse
@@ -93,7 +97,8 @@ class FundTracker:
     Class level parameters:
         self.AVAILABLE_DATA_SOURCES (dict['name': class method]):
             Dictionary containing names and associated class methods for linked external
-            modules for retrieving fund data.
+            modules for retrieving fund data. Must be update when adding external data
+            retrieval modules.
 
     Args:
         load_data (bool): Defaults to True. True loads saved data when available.
@@ -119,8 +124,8 @@ class FundTracker:
 
         data_source indicates which application to use when getting fund data.
 
-        Multithreading incorporated due to much of the processing time spend waiting
-        on IO bound operations, such as waiting for data_source to return fund data.
+        Multithreading incorporated due to much of the processing time spent waiting
+        on IO bound operations, such as waiting on network sockets.
 
         Args:
             data_source (str): OPTIONAL. Uses a default data source when argument is
@@ -134,7 +139,7 @@ class FundTracker:
 
         start_time = time.perf_counter()  # Time operation.
 
-        # Create lst for the maper to iterate through.
+        # Create a list for the thread pool maper to iterate through.
         # [[symbol, name, data_source]]
         args = [(s_n[0].upper(), s_n[1] or None, data_source)
                 for s_n in self.symbols_names]
@@ -145,9 +150,7 @@ class FundTracker:
             results = executor.map(self._separate_args, args)
 
         # Yield data from results generator.
-        instantiated_funds = \
-            [result for result in results
-             if result is not None and result is not RuntimeError]
+        instantiated_funds = [result for result in results]
 
         end_time = time.perf_counter()
         total_time = round(end_time - start_time, 2)
@@ -900,7 +903,6 @@ def run_application(args):
 
     # Run Application main event loop when no args are True.
     ft.main_event_loop()
-    ft.save()
 
     log.debug('Run application complete.')
 

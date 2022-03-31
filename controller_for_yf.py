@@ -2,6 +2,37 @@
 # -*- coding: utf-8 -*-
 
 
+"""
+Author:
+    Graham Steeds
+
+Context:
+    Used to interface between parent application and pull_from_yf.py.
+
+Description:
+    Uses the pull_from_yf.py module to pull data from YahooFinancials.
+
+    When using child module sets up a thread class with a return value, receives either
+    return value or default value upon timeout. If return value is not a timeout,
+    parses value and return a data set that is acceptable by caller method.
+
+Attributes:
+    DEFAULT_LOG_FILENAME: Default filename for logging when module called directly.
+    DEFAULT_LOG_LEVEL: Default log level when this module is called directly.
+    DEFAULT_THREAD_TIMEOUT: Number of seconds before the thread should time out.
+    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+    CURRENT_DATE: String representing the current date in yyyy-mm-dd format.
+    WEEK_AGO_DATE: String representing the date a week before the current date in
+        yyyy-mm-dd format. Used when generating default dates data.
+    MONTH_AGO_DATE: String representing the date a month before the current date in
+        yyyy-mm-dd format. Used when generating default dates data.
+    TWO_YEARS_AGO_DATE: String representing the date two years before the current date
+        in yyyy-mm-dd format. Used when generating default dates data.
+
+Composition Attributes:
+    Line length = 88 characters.
+    """
+
 import logging
 import threading
 import time
@@ -12,15 +43,16 @@ from logging import handlers
 
 from pull_from_yf import get_fund_data
 
-DEFAULT_LOG_FILENAME = 'controller_for_yf'
-DEFAULT_LOG_LEVEL = logging.DEBUG
+DEFAULT_LOG_FILENAME = 'controller_for_yf.log'
+DEFAULT_LOG_LEVEL = logging.WARNING
 DEFAULT_THREAD_TIMEOUT = 1  # In seconds.
 RUNTIME_ID = uuid.uuid4()
 
+# Date related attributes.
 CURRENT_DATE = date.today().__str__()
-TWO_YEARS_AGO_DATE = (date.today() - relativedelta(years=2)).__str__()
-MONTH_AGO_DATE = (date.today() - relativedelta(months=1)).__str__()
 WEEK_AGO_DATE = (date.today() - relativedelta(weeks=1)).__str__()
+MONTH_AGO_DATE = (date.today() - relativedelta(months=1)).__str__()
+TWO_YEARS_AGO_DATE = (date.today() - relativedelta(years=2)).__str__()
 
 
 # Configure logging.
@@ -68,11 +100,13 @@ class ReturnThreadValue(threading.Thread):
                 called) is not found.
         """
 
+        log.debug(f'Thread-{self.name}.run()')
+
         if self._target is not None:
             # Identify return value for target function.
             self.result = self._target(*self._args, **self._kwargs)
         else:
-            msg = f'Target function for thread not found.'
+            msg = f'Target function for Thread-{self.name} not found.'
             log.warning(msg)
             raise ControllerForYfError(msg)
 
@@ -90,6 +124,8 @@ class ReturnThreadValue(threading.Thread):
                 Defaults to None if timeout reached before callable function returns a
                 value.
         """
+
+        log.debug(f'Thread-{self.name}.join()')
 
         super().join(*args, **kwargs)
         return self.result
