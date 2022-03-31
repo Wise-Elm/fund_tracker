@@ -25,3 +25,8 @@ Description:
     
     financeapp is designed to be easily expandable, being able to quickly incorporate 
     new financial data applications in order to retrieve data.
+
+TODO:
+
+    Incorporate more robust error and exception handling.
+    Develop unittesting.
