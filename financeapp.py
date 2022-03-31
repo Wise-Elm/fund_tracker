@@ -52,6 +52,7 @@ Attributes:
     DEFAULT_DATA_SOURCE: Default source for retrieving data.
     DEFAULT_LOG_FILENAME: Default file path for application wide logging.
     DEFAULT_LOG_LEVEL: Default log level.
+    DEFAULT_THREAD_TIMEOUT: Number of seconds before the thread should time out.
     RUNTIME_ID: Generate a unique uuid object. Used in logging.
 
 Composition Attributes:
@@ -63,7 +64,6 @@ TODO:
 """
 
 import argparse
-import concurrent.futures
 import logging
 import sys
 import time
@@ -75,12 +75,14 @@ from logging import handlers
 # Local imports.
 from core import Fund
 from controller_for_yf import get_yf_fund_data
+from customthread import ReturnThreadValue as RTV
 from storage import Repo
 
 DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
 DEFAULT_LOG_FILENAME = 'financeapp.log'
-DEFAULT_LOG_LEVEL = logging.WARNING
+DEFAULT_LOG_LEVEL = logging.DEBUG
+DEFAULT_THREAD_TIMER = 0.8  # In seconds
 RUNTIME_ID = uuid.uuid4()
 
 # Configure logging.
@@ -140,18 +142,17 @@ class FundTracker:
 
         start_time = time.perf_counter()  # Time operation.
 
-        # Create a list for the thread pool maper to iterate through.
-        # [[symbol, name, data_source]]
-        args = [(s_n[0].upper(), s_n[1] or None, data_source)
-                for s_n in self.symbols_names]
+        # Use custom thread class (RTV) to get return values from called method.
+        # Construct list of thread objects.
+        threads = [RTV(target=self.instantiate_fund,
+                       args=[s_n[0], s_n[1], data_source, False])
+                   for s_n in self.symbols_names]
 
-        # Setup multithreading with maper.
-        # Map arguments in args for execution by individual threads.
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = executor.map(self._separate_args, args)
+        # Execute threads.
+        [thread.start() for thread in threads]
 
-        # Yield data from results generator.
-        instantiated_funds = [result for result in results]
+        # Collect results.
+        instantiated_funds = [thread.join(DEFAULT_THREAD_TIMER) for thread in threads]
 
         end_time = time.perf_counter()
         total_time = round(end_time - start_time, 2)
@@ -160,22 +161,13 @@ class FundTracker:
 
         return instantiated_funds
 
-    def _separate_args(self, args):
-        """Unpack arguments and call self.instantiate_fund().
-
-        Helper method for self. instantiate_saved_funds(), since thread maper in
-        method cannot unpack args on its own.
-
-        Args:
-            args (list): List of arguments for self.instantiate_fund().
-
-        Returns:
-            (obj): Instantiated Fund object.
-        """
-
-        return self.instantiate_fund(*args)
-
-    def instantiate_fund(self, symbol, name=None, data_source=DEFAULT_DATA_SOURCE):
+    def instantiate_fund(
+            self,
+            symbol,
+            name=None,
+            data_source=DEFAULT_DATA_SOURCE,
+            _create_thread=True
+    ):
         """Instantiate a Fund object.
 
         Uses self.check_data_source() to confirm legality of data_source argument.
@@ -186,6 +178,8 @@ class FundTracker:
                 fund.
             data_source (str): OPTIONAL. Defaults to a usable data source. A module from
                 which to pull fund data.
+            _create_thread (Bool): For internal use only. Should not be used. When True
+                method will setup a thread for setting a max time on data retrieval.
 
         Returns:
             (fund or None): fund when data_source is legal, and fund is found
@@ -201,8 +195,22 @@ class FundTracker:
         # Identify method connecting to external module for pulling data.
         source_method = self.AVAILABLE_DATA_SOURCES[data_source]
 
-        # Get fund data from source method. Will return None if data is not available.
-        data = source_method(symbol)
+        # Threading used to set max time for operation.
+        if _create_thread is True:
+            log.debug(f'Thread for {symbol} created...')
+
+            thread = RTV(target=source_method, args=[symbol])
+            thread.start()
+            data = thread.join(DEFAULT_THREAD_TIMER)
+
+            log.debug(f'Thread for {symbol} completed.')
+
+        # When method is called by self.instantiate_saved_funds(), since that method
+        # already incorporates threading.
+        else:
+            # Get fund data from source method. Will return None if data is not
+            # available.
+            data = source_method(symbol)
 
         if data is None:
             return None

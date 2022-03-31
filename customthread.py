@@ -40,11 +40,18 @@ class ReturnThreadValue(threading.Thread):
     """Child class of threading.Thread.
 
     Constructed to provide a return value to parent.join() for thread of self.
+
+    self.return is the return value from the called function or method.
+    self.thread_name is an easily understandable name for the thread intended to be
+        used in logging and debugging.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.result = None  # Add self.result for return value.
+        self.thread_name = 'Thread-{}'.format(kwargs['args'][0])
+
+        log.debug(f'Instantiating {self.thread_name}...')
 
         """Should always be called with keyword arguments from parent class.
 
@@ -72,7 +79,7 @@ class ReturnThreadValue(threading.Thread):
                 called) is not found.
         """
 
-        log.debug(f'Thread-{self.name}.run()')
+        log.debug(f'{self.thread_name}.run()')
 
         if self._target is not None:
             # Identify return value for target function.
@@ -97,7 +104,7 @@ class ReturnThreadValue(threading.Thread):
                 value.
         """
 
-        log.debug(f'Thread-{self.name}.join()')
+        log.debug(f'{self.thread_name}.join()')
 
         super().join(*args, **kwargs)
         return self.result

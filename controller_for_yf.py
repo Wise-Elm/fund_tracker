@@ -11,14 +11,9 @@ Context:
 Description:
     Uses the pull_from_yf.py module to pull data from YahooFinancials.
 
-    When using child module sets up a thread class with a return value, receives either
-    return value or default value upon timeout. If return value is not a timeout,
-    parses value and return a data set that is acceptable by caller method.
-
 Attributes:
     DEFAULT_LOG_FILENAME: Default filename for logging when module called directly.
     DEFAULT_LOG_LEVEL: Default log level when this module is called directly.
-    DEFAULT_THREAD_TIMEOUT: Number of seconds before the thread should time out.
     RUNTIME_ID: Generate a unique uuid object. Used in logging.
     CURRENT_DATE: String representing the current date in yyyy-mm-dd format.
     WEEK_AGO_DATE: String representing the date a week before the current date in
@@ -33,19 +28,16 @@ Composition Attributes:
     """
 
 import logging
-import time
 import uuid
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from logging import handlers
 
 # Local imports.
-from customthread import ReturnThreadValue
 from pull_from_yf import get_fund_data
 
 DEFAULT_LOG_FILENAME = 'controller_for_yf.log'
 DEFAULT_LOG_LEVEL = logging.WARNING
-DEFAULT_THREAD_TIMEOUT = 0.8  # In seconds.
 RUNTIME_ID = uuid.uuid4()
 
 # Date related attributes.
@@ -89,30 +81,7 @@ def get_yf_fund_data(
 
     log.debug(f'get_yf_fund_data (symbol: {symbol}, name: {name})...')
 
-    # Setup thread instance to call intended function with args.
-    thread = ReturnThreadValue(
-        target=get_fund_data,
-        args=[symbol, start_date, end_date],
-        name=symbol
-    )
-
-    start_time = time.perf_counter()  # Time operation.
-
-    thread.start()  # Start thread.
-
-    # Result from callable function, or None if DEFAULT_THREAD_TIMEOUT is reached.
-    result = thread.join(DEFAULT_THREAD_TIMEOUT)
-
-    end_time = time.perf_counter()
-    total_time = round(end_time - start_time, 2)
-
-    log.debug(f'Thread-{thread.name} finished in {total_time} seconds.')
-
-    # Return Error is thread timed out.
-    if result is None:
-        msg = f'Thread for {symbol} timed out.'
-        log.warning(msg)
-        return None
+    result = get_fund_data(symbol, start_date, end_date)
 
     # Put data into acceptable format for caller.
     desired_data = parse_fund_data(result)
