@@ -197,7 +197,7 @@ class FundTracker:
 
         # Threading used to set max time for operation.
         if _create_thread is True:
-            log.debug(f'Thread for {symbol} created...')
+            log.debug(f'Creating thread for {symbol}...')
 
             thread = RTV(target=source_method, args=[symbol])
             thread.start()
