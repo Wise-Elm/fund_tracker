@@ -72,6 +72,7 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from logging import handlers
 
+# Local imports.
 from core import Fund
 from controller_for_yf import get_yf_fund_data
 from storage import Repo
@@ -79,7 +80,7 @@ from storage import Repo
 DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
 DEFAULT_LOG_FILENAME = 'financeapp.log'
-DEFAULT_LOG_LEVEL = logging.DEBUG
+DEFAULT_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
 
 # Configure logging.
