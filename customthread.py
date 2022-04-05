@@ -22,9 +22,12 @@ Composition Attributes:
 
 import logging
 import threading
+import uuid
+from logging import handlers
 
 DEFAULT_LOG_FILENAME = 'customthread.log'
 DEFAULT_LOG_LEVEL = logging.WARNING
+RUNTIME_ID = uuid.uuid4()
 
 
 # Configure logging.
@@ -51,7 +54,7 @@ class ReturnThreadValue(threading.Thread):
         self.result = None  # Add self.result for return value.
         self.thread_name = 'Thread-{}'.format(kwargs['args'][0])
 
-        log.debug(f'Instantiating {self.thread_name}...')
+        log.debug(f'Initializing {self.thread_name}...')
 
         """Should always be called with keyword arguments from parent class.
 

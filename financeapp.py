@@ -74,9 +74,11 @@ from logging import handlers
 
 # Local imports.
 from core import Fund
-from controller_for_yf import get_yf_fund_data
+from controller_for_yf import get_yf_fund_data, controller_for_yf_self_test
 from customthread import ReturnThreadValue as RTV
+from pull_from_yf import pull_from_yf_self_test
 from storage import Repo
+
 
 DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
@@ -885,6 +887,8 @@ def run_application(args):
     # Skip instantiating Application if self testing is selected.
     if args.test:
         self_test()
+        controller_for_yf_self_test()
+        pull_from_yf_self_test()
         return
 
     ft = FundTracker()  # Begin application instance.
@@ -976,3 +980,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # self_test()

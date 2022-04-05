@@ -36,6 +36,7 @@ from logging import handlers
 # Local imports.
 from pull_from_yf import get_fund_data
 
+
 DEFAULT_LOG_FILENAME = 'controller_for_yf.log'
 DEFAULT_LOG_LEVEL = logging.WARNING
 RUNTIME_ID = uuid.uuid4()
@@ -122,6 +123,10 @@ def parse_fund_data(data):
     # Show symbol for fund being parsed.
     log.debug('Parse fund data ({})...'.format([k for k in data][0]))
 
+    # Check the structure of the argument.
+    if not _check_data_structure(data):
+        return None
+
     key = tuple(data.keys())
     symbol = key[0]
     currency = data[symbol]['currency']
@@ -138,13 +143,66 @@ def parse_fund_data(data):
     return None or desired_data
 
 
+def _check_data_structure(data):
+    """Confirm the structure of data.
+
+    Args:
+        data (dict[other dict & lists]): Data with complex structure.
+
+    Returns:
+        (Bool(True)): True when date conditions are met.
+
+    Raises:
+        ControllerForYfError (Error): When data structure is not legal.
+    """
+
+    for k, v in data.items():
+        if not 'eventsData':
+            msg = f'Data dictionary missing: eventsData.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif not 'dividends':
+            msg = f'Data dictionary missing: dividends.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif 'firstTradeDate' not in v:
+            msg = f'Data dictionary missing: firstTradeDate.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif 'currency' not in v:
+            msg = f'Data dictionary missing: currency.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif 'instrumentType' not in v:
+            msg = f'Data dictionary missing: instrumentType.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif 'timeZone' not in v:
+            msg = f'Data dictionary missing: timeZone.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        elif 'prices' not in v:
+            msg = f'Data dictionary missing: prices.'
+            log.warning(msg)
+            raise ControllerForYfError(msg)
+
+        else:
+            return True
+
+
 def test():
     """For development level module testing."""
 
     pass
 
 
-def self_test():
+def controller_for_yf_self_test():
     """Run Unittests on module.
 
     Args:
@@ -156,10 +214,10 @@ def self_test():
 
     import unittest
 
-    import test_storage
+    import test_controller_for_yf
 
     # Conduct unittest.
-    suite = unittest.TestLoader().loadTestsFromModule(test_storage)
+    suite = unittest.TestLoader().loadTestsFromModule(test_controller_for_yf)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 
@@ -179,4 +237,4 @@ if __name__ == '__main__':
     log.addHandler(handler)
     log.setLevel(DEFAULT_LOG_LEVEL)
 
-    self_test()
+    controller_for_yf_self_test()
