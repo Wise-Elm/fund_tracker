@@ -77,7 +77,7 @@ from core import Fund
 from controller_for_yf import get_yf_fund_data, controller_for_yf_self_test
 from customthread import ReturnThreadValue as RTV
 from pull_from_yf import pull_from_yf_self_test
-from storage import Repo
+from storage import Repo, storage_self_test
 
 
 DEFAULT_DATA_FILE = 'data.csv'
@@ -889,6 +889,7 @@ def run_application(args):
         self_test()
         controller_for_yf_self_test()
         pull_from_yf_self_test()
+        storage_self_test()
         return
 
     ft = FundTracker()  # Begin application instance.
@@ -956,7 +957,8 @@ def main():
     handler = handlers.RotatingFileHandler(
         filename=DEFAULT_LOG_FILENAME,
         maxBytes=100 ** 3,  # 0.953674 Megabytes.
-        backupCount=1)
+        backupCount=1
+    )
     formatter = logging.Formatter(
         f'[%(asctime)s] - {RUNTIME_ID} - %(levelname)s - [%(name)s:%(lineno)s] - '
         f'%(message)s'
