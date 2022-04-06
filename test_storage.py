@@ -5,7 +5,7 @@
 import os
 import unittest
 
-from storage2 import Repo, StorageError
+from storage import Repo, StorageError
 from test_assets import ASSETS
 
 

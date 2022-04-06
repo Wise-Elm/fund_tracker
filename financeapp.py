@@ -84,7 +84,7 @@ DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
 DEFAULT_LOG_FILENAME = 'financeapp.log'
 DEFAULT_LOG_LEVEL = logging.DEBUG
-DEFAULT_THREAD_TIMER = 0.8  # In seconds
+DEFAULT_THREAD_TIMER = 0.8  # In seconds.
 RUNTIME_ID = uuid.uuid4()
 
 # Configure logging.
