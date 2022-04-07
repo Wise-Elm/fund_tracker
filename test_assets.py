@@ -9,6 +9,10 @@ Attributes:
     ASSETS: list of fund attributes as it would be loaded by storage.py.
 """
 
+from datetime import datetime
+
+from core import DATE_FORMAT
+
 
 ASSETS = [
     ['FBGRX', 'fund 1'],
@@ -42,3 +46,40 @@ DESIRED_DATA = [
     'MUTUALFUND',
     [['2022-04-01', 80.97000122070312]]
 ]
+
+PRE_INITIALIZED_FUND_1 = [
+    'FXAIX',
+    'USD',
+    'MUTUALFUND',
+    [['2021-01-01', 91.1], ['2022-01-01', 92.2], ['2020-01-01', 90.0]],
+    'STOCK'
+    # 'test,
+]
+
+PRE_INITIALIZED_FUND_2 = [
+    'FSMAX',
+    'USD',
+    'MUTUALFUND',
+    [['2021-01-01', 91.1], ['2022-01-01', 92.2], ['2020-01-01', 90.0]],
+    'STOCK'
+    # 'test,
+]
+
+
+POST_INITIALIZED_FUND = [
+    'FXAIX',
+    'USD',
+    'MUTUALFUND',
+    [
+        [datetime.strptime('2021-01-01', DATE_FORMAT).date(), 91.1],
+        [datetime.strptime('2022-01-01', DATE_FORMAT).date(), 92.2],
+        [datetime.strptime('2020-01-01', DATE_FORMAT).date(), 90.0]
+    ],
+    'STOCK',
+    'test'
+]
+
+INITIALIZED_FUND_STR = 'FXAIX - STOCK\nUSD - MUTUALFUND\nLatest price: 2020-01-01 - ' \
+                       '$90.00'
+
+INITIALIZED_FUND_REPR = PRE_INITIALIZED_FUND_1[0]

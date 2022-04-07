@@ -73,7 +73,7 @@ from dateutil.relativedelta import relativedelta
 from logging import handlers
 
 # Local imports.
-from core import Fund
+from core import core_self_test, Fund
 from controller_for_yf import get_yf_fund_data, controller_for_yf_self_test
 from customthread import ReturnThreadValue as RTV
 from pull_from_yf import pull_from_yf_self_test
@@ -890,6 +890,7 @@ def run_application(args):
         controller_for_yf_self_test()
         pull_from_yf_self_test()
         storage_self_test()
+        core_self_test()
         return
 
     ft = FundTracker()  # Begin application instance.
@@ -982,4 +983,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # self_test()

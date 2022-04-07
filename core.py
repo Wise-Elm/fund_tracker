@@ -6,7 +6,9 @@ Author:
     Graham Steeds
 
 Context:
-    This module provides object classes for financeapp.py.
+    This module provides  the Fund object class for financeapp.py. The Fund object
+    class represents a financial instrument such as a mutual fund or stock, that is
+    traded in a financial market.
 
 Attributes:
     CORE_LOG_LEVEL: Default log level when this module is called directly.
@@ -44,7 +46,7 @@ class Fund:
 
     Args:
         symbol (str): First parameter. Symbol representing a financial
-            instrument such as 'F'.
+            instrument, such as 'F'.
         currency (str): Second parameter. Symbol of trading currency such as 'USD'.
         instrument_type (str): Third parameter. Type of fund. Example: 'MUTUALFUND' or
             'STOCK'.
@@ -54,13 +56,13 @@ class Fund:
     """
 
     def __init__(self, symbol, currency, instrument_type, dates_prices, name=None):
-        self.name = name
-        self.symbol = symbol.upper()
-        self.currency = currency.upper()
-        self.instrument_type = instrument_type.upper()
-        for dp in dates_prices:
-            dp[0] = datetime.strptime(dp[0], DATE_FORMAT).date()
-        self.dates_prices = dates_prices
+        self.symbol = symbol.upper()  # Fund symbol. Ex. 'FXAIX'.
+        self.currency = currency.upper()  # Currency of fund. Ex. 'USD'.
+        self.instrument_type = instrument_type.upper()  # Ex. 'STOCK'.
+        # Turn date string into datetime object in yyyy-mm-dd format.
+        self.dates_prices = [[datetime.strptime(dp[0], DATE_FORMAT).date(), dp[1]]
+                             for dp in dates_prices]
+        self.name = name  # Optional name for fund given by user.
 
     def __str__(self):
         """String representation of Fund.
@@ -70,20 +72,27 @@ class Fund:
 
         Returns:
             formatted_str (str): String representing Fund.
+                Example:
+                    'FSMAX -\nUSD - MUTUALFUND\nLatest price: 2022-04-05 - $78.42'
         """
 
         log.debug(f'__str__ ({self.__repr__()})...')
 
-        blank = ''
+        # Get the latest price and round it to 2 decimal places.
         if self.dates_prices[-1][1]:
             formatted_price = '{:.2f}'.format(self.dates_prices[-1][1])
         else:  # Use previous days data when latest data is not available.
             formatted_price = '{:.2f}'.format(self.dates_prices[-2][1])
 
-        formatted_str = \
-            f'{self.symbol} - {self.name or blank}\n' \
-            f'{self.currency} - {self.instrument_type}\n' \
-            f'Latest price: {self.dates_prices[-1][0]} - ${formatted_price}'
+        formatted_str = '{} - {}\n{} - {}\nLatest price: {} - ${}'.\
+            format(
+                self.symbol,
+                self.name or '',
+                self.currency,
+                self.instrument_type,
+                self.dates_prices[-1][0],
+                formatted_price
+            )
 
         log.debug(f'__str__ ({self.__repr__()}) complete...')
 
@@ -130,13 +139,13 @@ class Fund:
                       f'{True if self.symbol == other else False}')
             return True if self.symbol == other else False
 
-        else:  # When type other is not a legal type. ie. a Fund or str.
+        else:  # When type other is not a legal type. i.e. a Fund or str.
             msg = f'Type {type(other)} is not a legally comparable type.'
             log.warning(msg)
             raise CoreError(msg)
 
 
-def self_test():
+def core_self_test():
     """Run Unittests on module.
 
     Args:

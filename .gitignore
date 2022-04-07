@@ -4,5 +4,5 @@ venv
 Pipfile
 Pipfile.lock
 *.log
-*.log.1
+*.1
 Pipfile*
