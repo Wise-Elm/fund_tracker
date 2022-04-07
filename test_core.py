@@ -5,11 +5,12 @@
 
 import unittest
 
+# External Imports
 from core import CoreError, Fund
 from test_assets import (
     INITIALIZED_FUND_STR,
     INITIALIZED_FUND_REPR,
-    POST_INITIALIZED_FUND,
+    POST_INITIALIZED_FUND_1,
     PRE_INITIALIZED_FUND_1,
     PRE_INITIALIZED_FUND_2
 )
@@ -38,11 +39,11 @@ class TestApplication(unittest.TestCase):
         """Test object instantiation and initialization."""
 
         # Test initialized attributes against expect attributes.
-        self.assertEqual(self.fund_1.symbol, POST_INITIALIZED_FUND[0])
-        self.assertEqual(self.fund_1.currency, POST_INITIALIZED_FUND[1])
-        self.assertEqual(self.fund_1.instrument_type, POST_INITIALIZED_FUND[2])
-        self.assertEqual(self.fund_1.dates_prices, POST_INITIALIZED_FUND[3])
-        self.assertEqual(self.fund_1.name, POST_INITIALIZED_FUND[4])
+        self.assertEqual(self.fund_1.symbol, POST_INITIALIZED_FUND_1[0])
+        self.assertEqual(self.fund_1.currency, POST_INITIALIZED_FUND_1[1])
+        self.assertEqual(self.fund_1.instrument_type, POST_INITIALIZED_FUND_1[2])
+        self.assertEqual(self.fund_1.dates_prices, POST_INITIALIZED_FUND_1[3])
+        self.assertEqual(self.fund_1.name, POST_INITIALIZED_FUND_1[4])
 
     def test__str__(self):
         """Test __str__."""

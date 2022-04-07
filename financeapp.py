@@ -48,6 +48,7 @@ Extendability:
     module.
 
 Attributes:
+    DATE_FORMAT: Format for working with dates. (yyyy-mm-dd).
     DEFAULT_DATA_FILE: Default file name for saving and loading data.
     DEFAULT_DATA_SOURCE: Default source for retrieving data.
     DEFAULT_LOG_FILENAME: Default file path for application wide logging.
@@ -80,6 +81,7 @@ from pull_from_yf import pull_from_yf_self_test
 from storage import Repo, storage_self_test
 
 
+DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
 DEFAULT_LOG_FILENAME = 'financeapp.log'
@@ -455,8 +457,8 @@ class FundTracker:
         log.debug(f'Custom range performance ({fund})...')
 
         today = date.today()
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        start_date = datetime.strptime(start_date, DATE_FORMAT).date()
+        end_date = datetime.strptime(end_date, DATE_FORMAT).date()
 
         # Raise exception if end date is the same or before start date.
         if end_date <= start_date:
@@ -525,7 +527,7 @@ class FundTracker:
         # price information.
         end_found = False
         while not end_found:
-            if datetime.strptime(dates_prices[-1][0], '%Y-%m-%d').date() > end_date:
+            if datetime.strptime(dates_prices[-1][0], DATE_FORMAT).date() > end_date:
                 dates_prices.pop()
                 continue
             elif dates_prices[-1][1] is None:
@@ -539,7 +541,7 @@ class FundTracker:
         # Find index of start date in dates_prices or closest dates before is start date
         # does not exist.
         start_index = 0
-        while datetime.strptime(dates_prices[start_index][0], '%Y-%m-%d').date() < \
+        while datetime.strptime(dates_prices[start_index][0], DATE_FORMAT).date() < \
             start_date:
             start_index += 1
 

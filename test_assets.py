@@ -2,25 +2,46 @@
 # -*- coding: utf-8 -*-
 
 """
+Author:
+    Graham Steeds
+
 Context:
-    Provide test assets for funanceapp.py self testing.
+    Provide test assets for funanceapp.py and dependant module self testing.
 
 Attributes:
-    ASSETS: list of fund attributes as it would be loaded by storage.py.
+    DESIRED_DATA: Simplified example return for controller_for_yf.parse_fund_data().
+    INITIALIZED_FUND_STR: Example return __str__() of fund made from attributes from
+        PRE_INITIALIZED_FUND_1
+    RAW_FUND_DATA: Example of return data from pull_from_yf.get_fund_data('VITPX').
+    SYMBOL_NAME: List of fund attributes as it would be loaded by storage.py.
+    PRE_INITIALIZED_FUND_1: Example attributes for a fund.
+    PRE_INITIALIZED_FUND_2: Example attributes for a fund.
+    INITIALIZED_FUND_REPR: Example return __repr__() of fund made from attributes from
+        PRE_INITIALIZED_FUND_1
+    POST_INITIALIZED_FUND_1: Example attributes for fund initialized using attributes
+        from PRE_INITIALIZED_FUND_1: Example attributes for a fund.
+
+Composition Attributes:
+    Line length = 88 characters.
 """
 
 from datetime import datetime
 
+# External Imports
 from core import DATE_FORMAT
 
 
-ASSETS = [
-    ['FBGRX', 'fund 1'],
-    ['FNBGX', 'fund 2'],
-    ['FNCMX', 'fund 3'],
-    ['FPADX', 'fund 4'],
-    ['FSMAX', 'fund 5']
+# Example return for controller_for_yf.parse_fund_data().
+DESIRED_DATA = [
+    'VITPX',
+    'USD',
+    'MUTUALFUND',
+    [['2022-04-01', 80.97000122070312]]
 ]
+
+
+INITIALIZED_FUND_STR = 'FXAIX - STOCK\nUSD - MUTUALFUND\nLatest price: 2020-01-01 - ' \
+                       '$90.00'
 
 # Example argument for controller_for_yf.parse_fund_data().
 RAW_FUND_DATA = {
@@ -38,13 +59,12 @@ RAW_FUND_DATA = {
                 'open': 80.97000122070312, 'close': 80.97000122070312, 'volume': 0,
                 'adjclose': 80.97000122070312, 'formatted_date': '2022-04-01'}]}}
 
-
-# Example return for controller_for_yf.parse_fund_data().
-DESIRED_DATA = [
-    'VITPX',
-    'USD',
-    'MUTUALFUND',
-    [['2022-04-01', 80.97000122070312]]
+SYMBOL_NAME = [
+    ['FBGRX', 'fund 1'],
+    ['FNBGX', 'fund 2'],
+    ['FNCMX', 'fund 3'],
+    ['FPADX', 'fund 4'],
+    ['FSMAX', 'fund 5']
 ]
 
 PRE_INITIALIZED_FUND_1 = [
@@ -65,8 +85,9 @@ PRE_INITIALIZED_FUND_2 = [
     # 'test,
 ]
 
+INITIALIZED_FUND_REPR = PRE_INITIALIZED_FUND_1[0]
 
-POST_INITIALIZED_FUND = [
+POST_INITIALIZED_FUND_1 = [
     'FXAIX',
     'USD',
     'MUTUALFUND',
@@ -78,8 +99,3 @@ POST_INITIALIZED_FUND = [
     'STOCK',
     'test'
 ]
-
-INITIALIZED_FUND_STR = 'FXAIX - STOCK\nUSD - MUTUALFUND\nLatest price: 2020-01-01 - ' \
-                       '$90.00'
-
-INITIALIZED_FUND_REPR = PRE_INITIALIZED_FUND_1[0]

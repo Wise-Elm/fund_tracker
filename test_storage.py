@@ -5,8 +5,9 @@
 import os
 import unittest
 
+# External Imports
 from storage import Repo, StorageError
-from test_assets import ASSETS
+from test_assets import SYMBOL_NAME
 
 
 DEFAULT_STORAGE_TEST_FILENAME = 'test_storage.csv'
@@ -20,7 +21,7 @@ class TestApplication(unittest.TestCase):
         """Create a test file."""
 
         repo = Repo(load_data=False)
-        repo.save(ASSETS, DEFAULT_STORAGE_TEST_FILENAME)
+        repo.save(SYMBOL_NAME, DEFAULT_STORAGE_TEST_FILENAME)
 
     @classmethod
     def tearDownClass(cls):
@@ -43,7 +44,7 @@ class TestApplication(unittest.TestCase):
         """Test load."""
 
         # Confirm that data loaded is the same as the data before it was saved.
-        self.assertEqual(ASSETS, self.repo.load(DEFAULT_STORAGE_TEST_FILENAME))
+        self.assertEqual(SYMBOL_NAME, self.repo.load(DEFAULT_STORAGE_TEST_FILENAME))
 
         # Confirm blank list is return from a bad filename.
         self.assertEqual(self.repo.load('bad_filename.csv'), [])
@@ -71,13 +72,13 @@ class TestApplication(unittest.TestCase):
         """Test _save_csv and _load_csv methods."""
 
         # Save test data to DEFAULT_STORAGE_TEST_FILENAME.
-        self.repo._save_csv(ASSETS, DEFAULT_STORAGE_TEST_FILENAME)
+        self.repo._save_csv(SYMBOL_NAME, DEFAULT_STORAGE_TEST_FILENAME)
 
         # Load information from DEFAULT_STORAGE_TEST_FILENAME.
         loaded_data = self.repo._load_csv(DEFAULT_STORAGE_TEST_FILENAME)
 
         # Confirm that test data is the same through a saving and loading cycle.
-        self.assertEqual(loaded_data, ASSETS)
+        self.assertEqual(loaded_data, SYMBOL_NAME)
 
 
 if __name__ == '__main__':
