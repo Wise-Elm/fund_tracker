@@ -413,23 +413,27 @@ class FundTracker:
 
         performance = fund.__str__()
 
-        if day:
-            day_change = '{:.2f}'.format(self.day_performance(fund)[0])
-            if day_change[0] != '-':  # Add '+' when number is not negative.
-                day_change = '+' + day_change
-            performance += '\n' + f'Previous 24 hours: {day_change}%'
+        ## Original Version:
+        # if day:
+        #     day_change = '{:.2f}'.format(self.day_performance(fund)[0])
+        #     if day_change[0] != '-':  # Add '+' when number is not negative.
+        #         day_change = '+' + day_change
+        #     performance += '\n' + f'Previous 24 hours: {day_change}%'
 
+        fmt = "\n{:18}: {:+6.2f}" # shared format string for past performances
+        #         msg    value    # + means always include +/- for pos/neg
+        # lines up messages and percent changes
+
+        if day:
+            performance += fmt.format('Previous 24 hours',
+                                      self.day_performance(fund)[0])
         if week:
-            week_change = '{:.2f}'.format(self.week_performance(fund)[0])
-            if week_change[0] != '-':  # Add '+' when number is not negative.
-                week_change = '+' + week_change
-            performance += '\n' + f'Previous week: {week_change}%'
+            performance += fmt.format('Previous year',
+                                      self.week_performance(fund)[0])
 
         if year:
-            year_change = '{:.2f}'.format(self.year_performance(fund)[0])
-            if year_change[0] != '-':  # Add '+' when number is not negative.
-                year_change = '+' + year_change
-            performance += '\n' + f'Previous year: {year_change}%'
+            performance += fmt.format('Previous year',
+                                      self.year_performance(fund)[0])
 
         log.debug(f'Generate fund perf str ({fund.__repr__()}) complete.')
 

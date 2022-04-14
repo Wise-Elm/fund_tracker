@@ -1,6 +1,7 @@
 - Minor changes to format in `README.md` so that the Markdown format
   is interpreted on github and displayed "nicely"
-- Dependency requires `pip install yahoofinancials` to set up
+- Dependency requires `pip install yahoofinancials` and `pip install
+  yfinance` to set up
 - Unsure of the basic usage pattern, some sample runs or usage message
   would help this
 - Trying a basic invocation as `python financeapp.py --add RHT` but

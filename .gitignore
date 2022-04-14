@@ -7,3 +7,4 @@ Pipfile.lock
 *.1
 Pipfile*
 *~
+/TAGS
