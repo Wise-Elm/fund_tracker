@@ -39,7 +39,7 @@ class CustomThreadError(RuntimeError):
     """Base class for exceptions arising from this module."""
 
 
-class ReturnThreadValue(threading.Thread):
+class RTV(threading.Thread):
     """Child class of threading.Thread.
 
     Constructed to provide a return value to parent.join() for thread of self.

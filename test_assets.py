@@ -14,6 +14,7 @@ Attributes:
         PRE_INITIALIZED_FUND_1
     RAW_FUND_DATA: Example of return data from pull_from_yf.get_fund_data('VITPX').
     SYMBOL_NAME: List of fund attributes as it would be loaded by storage.py.
+    SYMBOL_NAME_2 = List of fund attributes as it would be loaded by storage.py.
     PRE_INITIALIZED_FUND_1: Example attributes for a fund.
     PRE_INITIALIZED_FUND_2: Example attributes for a fund.
     INITIALIZED_FUND_REPR: Example return __repr__() of fund made from attributes from
@@ -65,6 +66,10 @@ SYMBOL_NAME = [
     ['FNCMX', 'fund 3'],
     ['FPADX', 'fund 4'],
     ['FSMAX', 'fund 5']
+]
+
+SYMBOL_NAME_2 = [
+    ['F', 'Ford']
 ]
 
 PRE_INITIALIZED_FUND_1 = [

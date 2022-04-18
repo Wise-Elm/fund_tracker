@@ -1,7 +1,9 @@
-#!/usr/bin/env python
+#! /usr/bin/python3.10
 # -*- coding: utf-8 -*-
 
 __version__ = '0.1.0'
+
+import os
 
 """Application working title: financeapp.
 
@@ -37,15 +39,25 @@ Extendability:
     created to pull data from the new module.
     
     The data returned must be a list of data for each fund where:
+    
         list[0] = symbol (ex. 'FXAIX')
         list[1] = denomination (ex. 'USD')
         list[2] = 'type' (ex. 'MUTUALFUND')
         list[3] = [date, closing price] 
-            (ex. [[2021-03-09, 166.02999877929688], [[2021-03-10, 164.02999877929688]]], 
-            where the list is ordered by date, the most current date being list[:-1].)
+            (ex. [
+                ['2021-03-09', 166.02999877929688], 
+                ['2021-03-10', 164.02999877929688]
+                ], 
+            list[3] is ordered by date, the most current date being list[:-1].)
             
     When these parameters are met financeapp can work with any outside data gathering 
     module.
+    
+    If desired, financeapp is prepared to run through a main event loop to have program 
+    run in a persistent mode. Do this through development using 
+    FundTracker.main_event_loop().
+    
+    Attribute DATE_FORMAT must match in each dependant module.
 
 Attributes:
     DATE_FORMAT: Format for working with dates. (yyyy-mm-dd).
@@ -76,7 +88,7 @@ from logging import handlers
 # Local imports.
 from core import core_self_test, Fund
 from controller_for_yf import get_yf_fund_data, controller_for_yf_self_test
-from customthread import ReturnThreadValue as RTV
+from customthread import RTV as rtv
 from pull_from_yf import pull_from_yf_self_test
 from storage import Repo, storage_self_test
 
@@ -148,7 +160,7 @@ class FundTracker:
 
         # Use custom thread class (RTV) to get return values from called method.
         # Construct list of thread objects.
-        threads = [RTV(target=self.instantiate_fund,
+        threads = [rtv(target=self.instantiate_fund,
                        args=[s_n[0], s_n[1], data_source, False])
                    for s_n in self.symbols_names]
 
@@ -203,7 +215,7 @@ class FundTracker:
         if _create_thread is True:
             log.debug(f'Creating thread for {symbol}...')
 
-            thread = RTV(target=source_method, args=[symbol])
+            thread = rtv(target=source_method, args=[symbol])
             thread.start()
             data = thread.join(DEFAULT_THREAD_TIMER)
 
@@ -385,7 +397,7 @@ class FundTracker:
         kvargs = day, week, year
         for fund in self.funds:
             all_performance += '\n' + self.generate_fund_performance_str(fund, *kvargs)
-            all_performance += '\n' + '*' * 50
+            all_performance += '\n' + '*' * 40
 
         log.debug('Generate all fund perf str complete.')
 
@@ -820,7 +832,7 @@ def parse_args(argv=sys.argv):
     # Program description.
     parser = argparse.ArgumentParser(
         description='Description for program.',
-        epilog='epilog here.'
+        epilog=''
     )
 
     # What this argument will do.
