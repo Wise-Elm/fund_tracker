@@ -81,6 +81,8 @@ import logging
 import sys
 import time
 import uuid
+import bisect
+
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from logging import handlers
@@ -105,6 +107,41 @@ RUNTIME_ID = uuid.uuid4()
 log = logging.getLogger()
 log.addHandler(logging.NullHandler())
 
+# CK: this is a utility function that can be outside any class; it
+# doesn't use any fields / data within classes so is independent
+def calculate_percentage(first_price, last_price):
+    """Find percentage difference between two numbers. Return is negative
+    when first argument is greater than second argument.
+
+    Args:
+        first_price (float): First parameter.
+        last_price (float): Second parameter.
+
+    Returns:
+        difference (float): Percentage difference between first and second
+            argument.
+    """
+
+    log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
+
+    # CK: A slightly slicker way to do this computation
+    first_price, last_price = float(first_price), float(last_price)
+    big = max(first_price, last_price)
+    lil = min(first_price, last_price)
+    sign = +1 if first_price < last_price else -1
+    difference = (big-lil) / big * 100 * sign
+
+    # if first_price == last_price:
+    #     difference = 0.0
+    # elif first_price > last_price:  # Percentage decrease.
+    #     difference = ((first_price - last_price) / first_price * 100)
+    #     difference = -abs(difference)
+    # elif first_price < last_price:  # Percentage increase.
+    #     difference = (last_price - first_price) / last_price * 100
+
+    log.debug(f'Calculate percentage (percentage: {difference}) complete.')
+
+    return difference
 
 class FundTrackerApplicationError(RuntimeError):
     """Base class for exceptions arising from this module."""
@@ -425,23 +462,28 @@ class FundTracker:
 
         performance = fund.__str__()
 
-        if day:
-            day_change = '{:.2f}'.format(self.day_performance(fund)[0])
-            if day_change[0] != '-':  # Add '+' when number is not negative.
-                day_change = '+' + day_change
-            performance += '\n' + f'Previous 24 hours: {day_change}%'
+        ## Original Version:
+        # if day:
+        #     day_change = '{:.2f}'.format(self.day_performance(fund)[0])
+        #     if day_change[0] != '-':  # Add '+' when number is not negative.
+        #         day_change = '+' + day_change
+        #     performance += '\n' + f'Previous 24 hours: {day_change}%'
 
+        # CK: Alternative version
+        fmt = "\n{:18}: {:+6.2f}" # shared format string for past performances
+        #         msg    value    # + means always include +/- for pos/neg
+        # lines up messages and percent changes
+
+        if day:
+            performance += fmt.format('Previous 24 hours',
+                                      self.day_performance(fund)[0])
         if week:
-            week_change = '{:.2f}'.format(self.week_performance(fund)[0])
-            if week_change[0] != '-':  # Add '+' when number is not negative.
-                week_change = '+' + week_change
-            performance += '\n' + f'Previous week: {week_change}%'
+            performance += fmt.format('Previous year',
+                                      self.week_performance(fund)[0])
 
         if year:
-            year_change = '{:.2f}'.format(self.year_performance(fund)[0])
-            if year_change[0] != '-':  # Add '+' when number is not negative.
-                year_change = '+' + year_change
-            performance += '\n' + f'Previous year: {year_change}%'
+            performance += fmt.format('Previous year',
+                                      self.year_performance(fund)[0])
 
         log.debug(f'Generate fund perf str ({fund.__repr__()}) complete.')
 
@@ -505,7 +547,7 @@ class FundTracker:
         oldest_price, newest_price = fund.dates_prices[0][1], fund.dates_prices[-1][1]
 
         # Get percentage difference between first and last dates.
-        difference = self.calculate_percentage(oldest_price, newest_price)
+        difference = calculate_percentage(oldest_price, newest_price)
 
         msg = fund.__str__() + '\nPerformance between {} and {}: ' \
                                '{:.2f}%.'.format(start_date, end_date, difference)
@@ -599,7 +641,7 @@ class FundTracker:
         day_before_price = day_before_date_price[1]
 
         # Calculate percentage difference in prices.
-        difference = self.calculate_percentage(day_before_price, most_current_price)
+        difference = calculate_percentage(day_before_price, most_current_price)
 
         log.debug(f'Day performance ('
                   f'fund: {fund.__repr__()}, performance: {difference})'
@@ -634,7 +676,7 @@ class FundTracker:
         day_before_price = day_before_date_price[1]
 
         # Calculate percentage difference in prices.
-        difference = self.calculate_percentage(day_before_price, most_current_price)
+        difference = calculate_percentage(day_before_price, most_current_price)
 
         log.debug(f'Week performance ('
                   f'fund: {fund.__repr__()}, performance: {difference})'
@@ -669,7 +711,7 @@ class FundTracker:
         day_before_price = day_before_date_price[1]
 
         # Calculate percentage difference in prices.
-        difference = self.calculate_percentage(day_before_price, most_current_price)
+        difference = calculate_percentage(day_before_price, most_current_price)
 
         log.debug(f'Year performance ('
                   f'fund: {fund.__repr__()}, performance: {difference})'
@@ -717,6 +759,11 @@ class FundTracker:
                 else:
                     index -= 1
 
+        # CK: alternative to the linear search above using bisect module
+        bindex = bisect.bisect_left(fund.dates_prices, date_, key=(lambda dp: dp[0]))
+        index = bindex
+        # print("index: ",index,"bindex:",bindex)
+
         # Get date and price data for search_date argument.
         most_current_date, most_current_price = \
             fund.dates_prices[index][0], fund.dates_prices[index][1] or None
@@ -732,34 +779,34 @@ class FundTracker:
 
         return most_current_date, most_current_price
 
-    def calculate_percentage(self, first_price, last_price):
-        """Find percentage difference between two numbers. Return is negative
-        when first argument is greater than second argument.
+    # def calculate_percentage(self, first_price, last_price):
+    #     """Find percentage difference between two numbers. Return is negative
+    #     when first argument is greater than second argument.
 
-        Args:
-            first_price (float): First parameter.
-            last_price (float): Second parameter.
+    #     Args:
+    #         first_price (float): First parameter.
+    #         last_price (float): Second parameter.
 
-        Returns:
-            difference (float): Percentage difference between first and second
-                argument.
-        """
+    #     Returns:
+    #         difference (float): Percentage difference between first and second
+    #             argument.
+    #     """
 
-        log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
+    #     log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
 
-        first_price, last_price = float(first_price), float(last_price)
+    #     first_price, last_price = float(first_price), float(last_price)
 
-        if first_price == last_price:
-            difference = 0.0
-        elif first_price > last_price:  # Percentage decrease.
-            difference = ((first_price - last_price) / first_price * 100)
-            difference = -abs(difference)
-        elif first_price < last_price:  # Percentage increase.
-            difference = (last_price - first_price) / last_price * 100
+    #     if first_price == last_price:
+    #         difference = 0.0
+    #     elif first_price > last_price:  # Percentage decrease.
+    #         difference = ((first_price - last_price) / first_price * 100)
+    #         difference = -abs(difference)
+    #     elif first_price < last_price:  # Percentage increase.
+    #         difference = (last_price - first_price) / last_price * 100
 
-        log.debug(f'Calculate percentage (percentage: {difference}) complete.')
+    #     log.debug(f'Calculate percentage (percentage: {difference}) complete.')
 
-        return difference
+    #     return difference
 
     def add_fund(self, symbol, name=None):
         """Add fund to saved data.
