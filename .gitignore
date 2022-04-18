@@ -6,3 +6,5 @@ Pipfile.lock
 *.log
 *.1
 Pipfile*
+*~
+/TAGS
