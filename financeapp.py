@@ -3,8 +3,6 @@
 
 __version__ = '0.1.0'
 
-import os
-
 """Application working title: financeapp.
 
 Author:
@@ -74,6 +72,8 @@ Composition Attributes:
 TODO:
     Incorporate more robust error and exception handling.
     Develop unittesting.
+    
+    Develop error handling when input fund does not exist.
 """
 
 import argparse
@@ -107,8 +107,7 @@ RUNTIME_ID = uuid.uuid4()
 log = logging.getLogger()
 log.addHandler(logging.NullHandler())
 
-# CK: this is a utility function that can be outside any class; it
-# doesn't use any fields / data within classes so is independent
+
 def calculate_percentage(first_price, last_price):
     """Find percentage difference between two numbers. Return is negative
     when first argument is greater than second argument.
@@ -124,24 +123,18 @@ def calculate_percentage(first_price, last_price):
 
     log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
 
-    # CK: A slightly slicker way to do this computation
+    # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
+    # not look as clean. Can be found in Git history.
     first_price, last_price = float(first_price), float(last_price)
-    big = max(first_price, last_price)
-    lil = min(first_price, last_price)
+    big, lil = max(first_price, last_price), min(first_price, last_price)
+    # Determine if difference is positive or negative.
     sign = +1 if first_price < last_price else -1
     difference = (big-lil) / big * 100 * sign
-
-    # if first_price == last_price:
-    #     difference = 0.0
-    # elif first_price > last_price:  # Percentage decrease.
-    #     difference = ((first_price - last_price) / first_price * 100)
-    #     difference = -abs(difference)
-    # elif first_price < last_price:  # Percentage increase.
-    #     difference = (last_price - first_price) / last_price * 100
 
     log.debug(f'Calculate percentage (percentage: {difference}) complete.')
 
     return difference
+
 
 class FundTrackerApplicationError(RuntimeError):
     """Base class for exceptions arising from this module."""
@@ -195,7 +188,7 @@ class FundTracker:
 
         start_time = time.perf_counter()  # Time operation.
 
-        # Use custom thread class (RTV) to get return values from called method.
+        # Use custom thread class (rtv) to get return values from called method.
         # Construct list of thread objects.
         threads = [rtv(target=self.instantiate_fund,
                        args=[s_n[0], s_n[1], data_source, False])
@@ -462,23 +455,17 @@ class FundTracker:
 
         performance = fund.__str__()
 
-        ## Original Version:
-        # if day:
-        #     day_change = '{:.2f}'.format(self.day_performance(fund)[0])
-        #     if day_change[0] != '-':  # Add '+' when number is not negative.
-        #         day_change = '+' + day_change
-        #     performance += '\n' + f'Previous 24 hours: {day_change}%'
-
-        # CK: Alternative version
-        fmt = "\n{:18}: {:+6.2f}" # shared format string for past performances
-        #         msg    value    # + means always include +/- for pos/neg
+        # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
+        # not format result in matching string lengths before ':'. See Git history.
+        fmt = "\n{:18}: {:+6.2f}"  # shared format string for past performances
+        #         msg    value     # + means always include +/- for pos/neg
         # lines up messages and percent changes
 
         if day:
             performance += fmt.format('Previous 24 hours',
                                       self.day_performance(fund)[0])
         if week:
-            performance += fmt.format('Previous year',
+            performance += fmt.format('Previous week',
                                       self.week_performance(fund)[0])
 
         if year:
@@ -723,7 +710,8 @@ class FundTracker:
         """Get most current price for a Fund.
 
         The most current price will not necessarily be the last trading day as some
-        pricing information lags behind the market close.
+        pricing information lags behind the market close and many days, such as
+        weekends and holidays, are days without trading.
 
         Args:
             fund (Fund obj): Fund object.
@@ -747,22 +735,13 @@ class FundTracker:
         if search_date is None:
             search_date = fund.dates_prices[-1][0]
 
-        # Find index of search_date in fund.dates_prices.
-        index = len(fund.dates_prices) - 1
-        date_found = False
-        while not date_found:
-            for date_, price in reversed(fund.dates_prices):
-                # If search date not available get the closest date before .
-                if date_ == search_date or date_ < search_date:
-                    date_found = True
-                    break
-                else:
-                    index -= 1
-
-        # CK: alternative to the linear search above using bisect module
-        bindex = bisect.bisect_left(fund.dates_prices, date_, key=(lambda dp: dp[0]))
-        index = bindex
-        # print("index: ",index,"bindex:",bindex)
+        # Usage of bisect.bisect_left as suggested by Chris Kauffman, UMN. The bisect
+        # module provides O(log(N)) searching. Previous solution required O(N).
+        # Identify index of search_date.
+        index = bisect.bisect_left(
+            fund.dates_prices,  # List[list[date, price]]
+            search_date,
+            key=(lambda dp: dp[0]))  # Position for date within inner lists.
 
         # Get date and price data for search_date argument.
         most_current_date, most_current_price = \
@@ -778,35 +757,6 @@ class FundTracker:
                   f'price: {most_current_price}, date: {most_current_date}) complete. ')
 
         return most_current_date, most_current_price
-
-    # def calculate_percentage(self, first_price, last_price):
-    #     """Find percentage difference between two numbers. Return is negative
-    #     when first argument is greater than second argument.
-
-    #     Args:
-    #         first_price (float): First parameter.
-    #         last_price (float): Second parameter.
-
-    #     Returns:
-    #         difference (float): Percentage difference between first and second
-    #             argument.
-    #     """
-
-    #     log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
-
-    #     first_price, last_price = float(first_price), float(last_price)
-
-    #     if first_price == last_price:
-    #         difference = 0.0
-    #     elif first_price > last_price:  # Percentage decrease.
-    #         difference = ((first_price - last_price) / first_price * 100)
-    #         difference = -abs(difference)
-    #     elif first_price < last_price:  # Percentage increase.
-    #         difference = (last_price - first_price) / last_price * 100
-
-    #     log.debug(f'Calculate percentage (percentage: {difference}) complete.')
-
-    #     return difference
 
     def add_fund(self, symbol, name=None):
         """Add fund to saved data.

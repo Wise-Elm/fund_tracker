@@ -20,10 +20,10 @@ Composition Attributes:
     Line length = 88 characters.
 """
 
-
+import bisect
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import handlers
 
 
@@ -143,6 +143,109 @@ class Fund:
             msg = f'Type {type(other)} is not a legally comparable type.'
             log.warning(msg)
             raise CoreError(msg)
+
+#     def day_performance(self):
+#         """Get the performance of fund period between last open and close.
+#
+#         Args:
+#             None
+#
+#         Returns:
+#             difference(float): Difference in closing fund price.
+#         """
+#
+#         log.debug(f'Day performance ({self.__repr__()})...')
+#
+#         current_price, current_date_ = self.get_most_current_price()
+#         previous_price, previous_date_ = \
+#             self.get_most_current_price(self.dates_prices[-1][0] - timedelta(days=1))
+#
+#         difference = calculate_percentage(current_price, previous_price)
+#
+#         log.debug(f'Day performance ('
+#                   f'fund: {self.__repr__()}, performance: {difference})'
+#                   f' complete.')
+#
+#         return difference
+#
+#     def get_most_current_price(self, search_date=None):
+#         """Get most current price for a Fund.
+#
+#         The most current price will not necessarily be the last trading day as some
+#         pricing information lags behind the market close and many days, such as
+#         weekends and holidays, are days without trading.
+#
+#         Args:
+#             search_date (datetime obj): OPTIONAL. Defaults to today's date. Datetime
+#             object representing date. Will search for the closest date before argument
+#             date.
+#                     Example:
+#                         Program will start searching for date and price information
+#                         starting with argument date, and proceed to earlier dates
+#                         progressively until date is found with both date and price
+#                         information.
+#
+#         Returns:
+#             tuple(most_current_date, most_current_date): The most current date and
+#                 price information available.
+#         """
+#
+#         log.debug(f'Get most current price: ({self.__repr__()})...')
+#
+#         # Use latest date in fund as a default.
+#         if search_date is None:
+#             search_date = self.dates_prices[-1][0]
+#
+#         # Usage of bisect.bisect_left as suggested by Chris Kauffman, UMN. The bisect
+#         # module provides O(log(N)) searching. Previous solution required O(N).
+#         # Identify index of search_date.
+#         index = bisect.bisect_left(
+#             self.dates_prices,  # List[list[date, price]]
+#             search_date,
+#             key=(lambda dp: dp[0]))  # Position for date within inner lists.
+#
+#         # Get date and price data for search_date argument.
+#         most_current_date, most_current_price = \
+#             self.dates_prices[index][0], self.dates_prices[index][1] or None
+#
+#         # Revert to previous day if price data has not been updated.
+#         while most_current_price is None:
+#             for date_, price in reversed(self.dates_prices):
+#                 most_current_date = date_  # ex. datetime.date(2022, 3, 16)
+#                 most_current_price = price  # ex.151.123456789
+#
+#         log.debug(f'Get most current price ({self.__repr__()}, '
+#                   f'price: {most_current_price}, date: {most_current_date}) complete. ')
+#
+#         return most_current_date, most_current_price
+#
+#
+# def calculate_percentage(first_price, last_price):
+#     """Find percentage difference between two numbers. Return is negative
+#     when first argument is greater than second argument.
+#
+#     Args:
+#         first_price (float): First parameter.
+#         last_price (float): Second parameter.
+#
+#     Returns:
+#         difference (float): Percentage difference between first and second
+#             argument.
+#     """
+#
+#     log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
+#
+#     # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
+#     # not look as clean. Can be found in Git history.
+#     first_price, last_price = float(first_price), float(last_price)
+#     big, lil = max(first_price, last_price), min(first_price, last_price)
+#     # Determine if difference is positive or negative.
+#     sign = +1 if first_price < last_price else -1
+#     difference = (big - lil) / big * 100 * sign
+#
+#     log.debug(f'Calculate percentage (percentage: {difference}) complete.')
+#
+#     return difference
 
 
 def core_self_test():
