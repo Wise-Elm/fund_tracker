@@ -670,9 +670,9 @@ def self_test():
 def test():
     """For development level module testing."""
 
+    pass
 
-
-
+    
 def main():
     # Configure Rotating Log.
     handler = handlers.RotatingFileHandler(
