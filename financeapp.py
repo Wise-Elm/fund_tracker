@@ -224,6 +224,12 @@ class FundTracker:
             thread.start()
             data = thread.join(DEFAULT_THREAD_TIMER)
 
+            if thread.is_alive():
+                msg = f'Thread {thread.thread_name} timed out. Fund symbol might be ' \
+                      f'invalid.'
+                log.warning(msg)
+                raise FundTrackerApplicationError(msg)
+
             log.debug(f'Thread for {symbol} completed.')
 
         # When method is called by self.instantiate_saved_funds(), since that method
@@ -458,7 +464,7 @@ class FundTracker:
         )
 
         if fund is None:
-            msg = f'Data for {symbol} was not found. The symbol might be invalid.'
+            msg = f'Data for {symbol} was not found.'
             log.warning(msg)
             raise FundTrackerApplicationError(msg)
 
