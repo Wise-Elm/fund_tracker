@@ -81,7 +81,6 @@ import logging
 import sys
 import time
 import uuid
-import bisect
 
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -89,9 +88,8 @@ from logging import handlers
 
 # Local imports.
 from core import core_self_test, Fund
-from controller_for_yf import get_yf_fund_data, controller_for_yf_self_test
+from pull_from_yf import get_yf_fund_data, pull_from_yf_self_test
 from customthread import RTV as rtv
-from pull_from_yf import pull_from_yf_self_test
 from storage import Repo, storage_self_test
 
 
@@ -222,6 +220,7 @@ class FundTracker:
             log.debug(f'Creating thread for {symbol}...')
 
             thread = rtv(target=source_method, args=[symbol, start_date, end_date])
+            thread.daemon = True  # End the thread upon timeout.
             thread.start()
             data = thread.join(DEFAULT_THREAD_TIMER)
 
@@ -458,6 +457,11 @@ class FundTracker:
             end_date=end_date.__str__()
         )
 
+        if fund is None:
+            msg = f'Data for {symbol} was not found. The symbol might be invalid.'
+            log.warning(msg)
+            raise FundTrackerApplicationError(msg)
+
         custom_str = fund.get_custom_range_performance(
             start_date.__str__(),
             end_date.__str__()
@@ -607,7 +611,6 @@ def run_application(args):
     # Skip instantiating Application if self testing is selected.
     if args.test:
         self_test()
-        controller_for_yf_self_test()
         pull_from_yf_self_test()
         storage_self_test()
         core_self_test()
@@ -703,3 +706,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # self_test()
