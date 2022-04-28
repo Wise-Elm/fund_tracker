@@ -399,6 +399,9 @@ class Fund:
             custom_str (str): String displaying performance between argument dates.
         """
 
+        log.debug(f'Generating custom range performance between {start_date} and '
+                  f'{end_date}...')
+
         # Convert dates to datetime objects.
         start_date = datetime.strptime(start_date, DATE_FORMAT).date()
         end_date = datetime.strptime(end_date, DATE_FORMAT).date()
@@ -411,6 +414,9 @@ class Fund:
 
         custom_str = self.__str__() + '\nPerformance between {} and {}: ' \
                                '{:.2f}%.'.format(start_date, end_date, difference)
+
+        log.debug(f'Custom range performance string between {start_date} and {end_date} '
+                  f'complete.')
 
         return custom_str
 

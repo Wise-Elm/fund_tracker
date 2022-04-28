@@ -108,34 +108,6 @@ log = logging.getLogger()
 log.addHandler(logging.NullHandler())
 
 
-def calculate_percentage(first_price, last_price):
-    """Find percentage difference between two numbers. Return is negative
-    when first argument is greater than second argument.
-
-    Args:
-        first_price (float): First parameter.
-        last_price (float): Second parameter.
-
-    Returns:
-        difference (float): Percentage difference between first and second
-            argument.
-    """
-
-    log.debug(f'Calculate percentage (num1: {first_price}, num2: {last_price})...')
-
-    # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
-    # not look as clean. Can be found in Git history.
-    first_price, last_price = float(first_price), float(last_price)
-    big, lil = max(first_price, last_price), min(first_price, last_price)
-    # Determine if difference is positive or negative.
-    sign = +1 if first_price < last_price else -1
-    difference = (big-lil) / big * 100 * sign
-
-    log.debug(f'Calculate percentage (percentage: {difference}) complete.')
-
-    return difference
-
-
 class FundTrackerApplicationError(RuntimeError):
     """Base class for exceptions arising from this module."""
 
