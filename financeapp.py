@@ -212,6 +212,8 @@ class FundTracker:
             symbol,
             name=None,
             data_source=DEFAULT_DATA_SOURCE,
+            start_date=None,
+            end_date=None,
             _create_thread=True
     ):
         """Instantiate a Fund object.
@@ -224,6 +226,8 @@ class FundTracker:
                 fund.
             data_source (str): OPTIONAL. Defaults to a usable data source. A module from
                 which to pull fund data.
+            start_date (str): OPTIONAL. Defaults to None.
+            end_date (str): OPTIONAL. Defaults to None.
             _create_thread (Bool): For internal use only. Should not be used. When True
                 method will setup a thread for setting a max time on data retrieval.
 
@@ -245,7 +249,7 @@ class FundTracker:
         if _create_thread is True:
             log.debug(f'Creating thread for {symbol}...')
 
-            thread = rtv(target=source_method, args=[symbol])
+            thread = rtv(target=source_method, args=[symbol, start_date, end_date])
             thread.start()
             data = thread.join(DEFAULT_THREAD_TIMER)
 
@@ -426,61 +430,18 @@ class FundTracker:
         all_performance = ''
         kvargs = day, week, year
         for fund in self.funds:
-            all_performance += '\n' + self.generate_fund_performance_str(fund, *kvargs)
+            all_performance += '\n' + fund.generate_fund_performance_str(*kvargs)
             all_performance += '\n' + '*' * 40
 
         log.debug('Generate all fund perf str complete.')
 
         return all_performance
 
-    def generate_fund_performance_str(self, fund, day=True, week=True, year=True):
-        """Generates previous 24 hour, week, and year performance of fund
-        depending on arguments.
-
-        Args:
-            fund (Fund): Fund object.
-            day (Bool): Defaults to True. When true includes previous day fund
-                performance in return.
-            week (Bool): Defaults to True. When true includes previous week
-                fund performance in return.
-            year (Bool): Defaults to True. When true includes previous year
-                fund performance in return.
-
-        Returns:
-            performance (str): String including general fund information as
-                well time based performance data depending on arguments.
-        """
-
-        log.debug(f'Generate fund perf str ({fund.__repr__()})...')
-
-        performance = fund.__str__()
-
-        # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
-        # not format result in matching string lengths before ':'. See Git history.
-        fmt = "\n{:18}: {:+6.2f}"  # shared format string for past performances
-        #         msg    value     # + means always include +/- for pos/neg
-        # lines up messages and percent changes
-
-        if day:
-            performance += fmt.format('Previous 24 hours',
-                                      self.day_performance(fund)[0])
-        if week:
-            performance += fmt.format('Previous week',
-                                      self.week_performance(fund)[0])
-
-        if year:
-            performance += fmt.format('Previous year',
-                                      self.year_performance(fund)[0])
-
-        log.debug(f'Generate fund perf str ({fund.__repr__()}) complete.')
-
-        return performance
-
-    def custom_range_performance(self, fund, start_date, end_date):
+    def custom_range_performance(self, symbol, start_date, end_date):
         """Get the performance of a fund over a specified date range.
 
         Args:
-            fund (str): Fund symbol:
+            symbol (str): Fund symbol:
                 Example:
                     'FXAIX'
             start_date (str): Date in format yyyy-mm-dd.
@@ -495,7 +456,7 @@ class FundTracker:
             )
         """
 
-        log.debug(f'Custom range performance ({fund})...')
+        log.debug(f'Custom range performance ({symbol})...')
 
         today = date.today()
         start_date = datetime.strptime(start_date, DATE_FORMAT).date()
@@ -514,249 +475,25 @@ class FundTracker:
             log.warning(msg)
             raise FundTrackerApplicationError(msg)
 
-        # Include an additional month before the start date to make up for dates where
+        # Include an additional week before the start date to make up for dates where
         # pricing and/or dates are not available.
-        start_plus_month = start_date - relativedelta(months=1)
+        start_plus_week = start_date - relativedelta(weeks=1)
 
-        custom_data = self.pull_yahoofinancial(fund,
-                                               start_plus_month.__str__(),
-                                               end_date.__str__())
+        fund = self.instantiate_fund(
+            symbol,
+            data_source=DEFAULT_DATA_SOURCE,
+            start_date=start_plus_week.__str__(),
+            end_date=end_date.__str__()
+        )
 
-        # Replace date_price list in custom_date so that the first item in the list
-        # is the best usable start date, and the last item in the list is the best
-        # usable end date.
-        custom_data[3] = self.get_closest_dates(custom_data[3], start_date, end_date)
+        custom_str = fund.get_custom_range_performance(
+            start_date.__str__(),
+            end_date.__str__()
+        )
 
-        # Instantiate as fund object.
-        fund = Fund(*custom_data)
+        log.debug(f'Custom range performance ({symbol}) complete.')
 
-        # Get dates and prices for comparison.
-        oldest_price, newest_price = fund.dates_prices[0][1], fund.dates_prices[-1][1]
-
-        # Get percentage difference between first and last dates.
-        difference = calculate_percentage(oldest_price, newest_price)
-
-        msg = fund.__str__() + '\nPerformance between {} and {}: ' \
-                               '{:.2f}%.'.format(start_date, end_date, difference)
-
-        log.debug(f'Custom range performance ({fund}) complete.')
-
-        return msg
-
-    def get_closest_dates(self, dates_prices, start_date, end_date):
-        """Finds the closest valid dates on or before argument dates.
-
-         Will view a date as invalid if it is after the argument date or if it contains
-         pricing information of None.
-
-         Args:
-             dates_prices (list[date(str), price(str)]): First parameter. List of dates
-                and prices.
-             start_date (datetime obj): Second parameter. Ideal starting date.
-             end_date (datetime obj): Thirt parameter. Idea ending date.
-
-         Returns:
-             dates_prices (list[date(str), price(str)]): List of dates and associated
-                prices where the first and last items best fit the start_date and
-                end_date arguments respectively.
-         """
-
-        log.debug(f'Finding closest dates for start date ({start_date.__str__()}), and '
-                  f'end date ({end_date.__str__()})...')
-
-        # Find an end date on or before the requested end date that has both date and
-        # price information.
-        end_found = False
-        while not end_found:
-            if datetime.strptime(dates_prices[-1][0], DATE_FORMAT).date() > end_date:
-                dates_prices.pop()
-                continue
-            elif dates_prices[-1][1] is None:
-                dates_prices.pop()
-            else:
-                end_found = True
-
-        # Find a start date on or before the requested start date that has both date and
-        # price information.
-
-        # Find index of start date in dates_prices or closest dates before is start date
-        # does not exist.
-        start_index = 0
-        while datetime.strptime(dates_prices[start_index][0], DATE_FORMAT).date() < \
-            start_date:
-            start_index += 1
-
-        start_found = False
-        while not start_found:
-            if dates_prices[start_index][1] is None:
-                start_index -= 1
-            else:
-                start_found = True
-
-        # Eliminate dates outside desired ranges as they are unneeded.
-        dates_prices = dates_prices[start_index:]
-
-        log.debug(f'Closest date to start date ({start_date.__str__()} --> '
-                  f'{dates_prices[0][0]}), and end date ({end_date.__str__()}, '
-                  f'{dates_prices[-1][0]}) found.')
-
-        return dates_prices
-
-    def day_performance(self, fund):
-        """Get the performance of fund period between last open and close.
-
-        Args:
-            fund (Fund): Fund object.
-
-        Returns:
-            tuple(difference[float], Fund): tuple[0] returns the difference in
-            closing fund price. tuple[1] returns the Fund object.
-        """
-
-        log.debug(f'Day performance ({fund.__repr__()})...')
-
-        # Get most current date with price data.
-        most_current_date_price = self.get_most_current_price(fund)
-        most_current_date = most_current_date_price[0]
-        most_current_price = most_current_date_price[1]
-
-        # Find the day before the latest price.
-        day_before = most_current_date - timedelta(days=1)
-
-        # Get the closest date with date and price data before the most_current_date.
-        day_before_date_price = self.get_most_current_price(fund, day_before)
-        day_before_price = day_before_date_price[1]
-
-        # Calculate percentage difference in prices.
-        difference = calculate_percentage(day_before_price, most_current_price)
-
-        log.debug(f'Day performance ('
-                  f'fund: {fund.__repr__()}, performance: {difference})'
-                  f' complete.')
-
-        return difference, fund
-
-    def week_performance(self, fund):
-        """Get the performance of fund period between last close and the close
-        from a week prior.
-
-        Args:
-            fund (Fund): Fund object.
-
-        Returns:
-            tuple(difference[float], Fund): tuple[0] returns the difference in
-            closing fund price. tuple[1] returns the Fund object.
-        """
-
-        log.debug(f'Week performance ({fund.__repr__()})...')
-
-        # Get most current date with price data.
-        most_current_date_price = self.get_most_current_price(fund)
-        most_current_date = most_current_date_price[0]
-        most_current_price = most_current_date_price[1]
-
-        # Find the week before the latest price.
-        day_before = most_current_date - timedelta(weeks=1)
-
-        # Get the closest date with date and price data before the most_current_date.
-        day_before_date_price = self.get_most_current_price(fund, day_before)
-        day_before_price = day_before_date_price[1]
-
-        # Calculate percentage difference in prices.
-        difference = calculate_percentage(day_before_price, most_current_price)
-
-        log.debug(f'Week performance ('
-                  f'fund: {fund.__repr__()}, performance: {difference})'
-                  f' complete.')
-
-        return difference, fund
-
-    def year_performance(self, fund):
-        """Get the performance of fund period between last close and the close
-        from a year prior.
-
-        Args:
-            fund (Fund): Fund object.
-
-        Returns:
-            tuple(difference[float], Fund): tuple[0] returns the difference in
-            closing fund price. tuple[1] returns the Fund object.
-        """
-
-        log.debug(f'Year performance ({fund.__repr__()})...')
-
-        # Get most current date with price data.
-        most_current_date_price = self.get_most_current_price(fund)
-        most_current_date = most_current_date_price[0]
-        most_current_price = most_current_date_price[1]
-
-        # Find the year before the latest price.
-        day_before = most_current_date - timedelta(weeks=52)
-
-        # Get the closest date with date and price data before the most_current_date.
-        day_before_date_price = self.get_most_current_price(fund, day_before)
-        day_before_price = day_before_date_price[1]
-
-        # Calculate percentage difference in prices.
-        difference = calculate_percentage(day_before_price, most_current_price)
-
-        log.debug(f'Year performance ('
-                  f'fund: {fund.__repr__()}, performance: {difference})'
-                  f' complete.')
-
-        return difference, fund
-
-    def get_most_current_price(self, fund, search_date=None):
-        """Get most current price for a Fund.
-
-        The most current price will not necessarily be the last trading day as some
-        pricing information lags behind the market close and many days, such as
-        weekends and holidays, are days without trading.
-
-        Args:
-            fund (Fund obj): Fund object.
-            search_date (datetime obj): OPTIONAL. Defaults to today's date. Datetime
-            object representing date. Will search for the closest date before argument
-            date.
-                    Example:
-                        Program will start searching for date and price information
-                        starting with argument date, and proceed to earlier dates
-                        progressively until date is found with both date and price
-                        information.
-
-        Returns:
-            tuple(most_current_date, most_current_date): The most current date and
-                price information available.
-        """
-
-        log.debug(f'Get most current price: ({fund.__repr__()})...')
-
-        # Use latest date in fund as a default.
-        if search_date is None:
-            search_date = fund.dates_prices[-1][0]
-
-        # Usage of bisect.bisect_left as suggested by Chris Kauffman, UMN. The bisect
-        # module provides O(log(N)) searching. Previous solution required O(N).
-        # Identify index of search_date.
-        index = bisect.bisect_left(
-            fund.dates_prices,  # List[list[date, price]]
-            search_date,
-            key=(lambda dp: dp[0]))  # Position for date within inner lists.
-
-        # Get date and price data for search_date argument.
-        most_current_date, most_current_price = \
-            fund.dates_prices[index][0], fund.dates_prices[index][1] or None
-
-        # Revert to previous day if price data has not been updated.
-        while most_current_price is None:
-            for date_, price in reversed(fund.dates_prices):
-                most_current_date = date_  # ex. datetime.date(2022, 3, 16)
-                most_current_price = price  # ex.151.123456789
-
-        log.debug(f'Get most current price ({fund.__repr__()}, '
-                  f'price: {most_current_price}, date: {most_current_date}) complete. ')
-
-        return most_current_date, most_current_price
+        return custom_str
 
     def add_fund(self, symbol, name=None):
         """Add fund to saved data.
@@ -961,7 +698,7 @@ def self_test():
 def test():
     """For development level module testing."""
 
-    pass
+
 
 
 def main():
