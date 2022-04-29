@@ -24,5 +24,4 @@ new financial data applications in order to retrieve data.
 
 # TODO
 
-Incorporate more robust error and exception handling.
 Develop unittesting.

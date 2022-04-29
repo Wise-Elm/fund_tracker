@@ -82,7 +82,7 @@ import sys
 import time
 import uuid
 
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from logging import handlers
 
@@ -164,6 +164,12 @@ class FundTracker:
                        args=[s_n[0], s_n[1], data_source, False])
                    for s_n in self.symbols_names]
 
+        # Kill and cleanup threads that may run past thread.join. Threads may do this
+        # when there is a bad network connection, dependant modules are slow to respond
+        # or user inputs are bad.
+        for thread in threads:
+            thread.daemon = True
+
         # Execute threads.
         [thread.start() for thread in threads]
 
@@ -220,7 +226,7 @@ class FundTracker:
             log.debug(f'Creating thread for {symbol}...')
 
             thread = rtv(target=source_method, args=[symbol, start_date, end_date])
-            thread.daemon = True  # End the thread upon timeout.
+            thread.daemon = True  # Cleanup threads that may run past thread.join.
             thread.start()
             data = thread.join(DEFAULT_THREAD_TIMER)
 
@@ -407,8 +413,17 @@ class FundTracker:
         all_performance = ''
         kvargs = day, week, year
         for fund in self.funds:
-            all_performance += '\n' + fund.generate_fund_performance_str(*kvargs)
-            all_performance += '\n' + '*' * 40
+            try:
+                all_performance += '\n' + fund.generate_fund_performance_str(*kvargs)
+                all_performance += '\n' + '*' * 40
+            except AttributeError as ae:
+                # Can occur upon thread timeout, or lag from dependant modules over
+                # network that cannot locate a fund.
+                msg = f'Fund: {fund} returned as None. Possible thread timeout.'
+                log.warning(msg)
+                raise FundTrackerApplicationError(msg)
+            finally:
+                continue
 
         log.debug('Generate all fund perf str complete.')
 
@@ -435,22 +450,9 @@ class FundTracker:
 
         log.debug(f'Custom range performance ({symbol})...')
 
-        today = date.today()
+        # Convert date arguments to datetime objects.
         start_date = datetime.strptime(start_date, DATE_FORMAT).date()
         end_date = datetime.strptime(end_date, DATE_FORMAT).date()
-
-        # Raise exception if end date is the same or before start date.
-        if end_date <= start_date:
-            msg = f'Start date({start_date.__str__()}) must be before end date ' \
-                  f'({end_date.__str__()}).'
-            log.warning(msg)
-            raise FundTrackerApplicationError(msg)
-
-        # Raise exception if end date is in the future.
-        if end_date > today:
-            msg = f'End date ({end_date.__str__()}) is out of range (in the future).'
-            log.warning(msg)
-            raise FundTrackerApplicationError(msg)
 
         # Include an additional week before the start date to make up for dates where
         # pricing and/or dates are not available.

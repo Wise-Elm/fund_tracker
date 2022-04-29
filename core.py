@@ -23,7 +23,7 @@ Composition Attributes:
 import bisect
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from logging import handlers
 
 
@@ -403,8 +403,22 @@ class Fund:
                   f'{end_date}...')
 
         # Convert dates to datetime objects.
+        today = date.today()
         start_date = datetime.strptime(start_date, DATE_FORMAT).date()
         end_date = datetime.strptime(end_date, DATE_FORMAT).date()
+
+        # Raise exception if end date is the same or before start date.
+        if end_date <= start_date:
+            msg = f'Start date({start_date.__str__()}) must be before end date ' \
+                  f'({end_date.__str__()}).'
+            log.warning(msg)
+            raise CoreError(msg)
+
+        # Raise exception if end date is in the future.
+        if end_date > today:
+            msg = f'End date ({end_date.__str__()}) is out of range (in the future).'
+            log.warning(msg)
+            raise CoreError(msg)
 
         # Find best matching dates.
         dates_prices = self.get_closest_dates(start_date, end_date)
