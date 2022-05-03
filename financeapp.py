@@ -3,7 +3,8 @@
 
 __version__ = '0.1.0'
 
-"""Application working title: financeapp.
+"""
+Application working title: financeapp.
 
 Author:
     Graham Steeds
@@ -51,10 +52,6 @@ Extendability:
     When these parameters are met financeapp can work with any outside data gathering 
     module.
     
-    If desired, financeapp is prepared to run through a main event loop to have program 
-    run in a persistent mode. Do this through development using 
-    FundTracker.main_event_loop().
-    
     Attribute DATE_FORMAT must match in each dependant module.
 
 Attributes:
@@ -70,10 +67,7 @@ Composition Attributes:
     Line length = 88 characters.
     
 TODO:
-    Incorporate more robust error and exception handling.
-    Develop unittesting.
-    
-    Develop error handling when input fund does not exist.
+    Incorporate more robust error and exception handling.    
 """
 
 import argparse
@@ -504,25 +498,7 @@ class FundTracker:
 
         return fund
 
-    def main_event_loop(self):
-        """Run application.
-
-        Provides a user-friendly interaction with program from shell. Program
-        stays running until user quits.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-
-        log.debug('Main Event Loop...')
-
-        log.debug('Main Event Loop complete.')
-
-        return
-
+    # TODO (GS): Make print_to_screen a function.
     def print_to_screen(self, anything):
         """Print any string to screen.
 
@@ -540,6 +516,31 @@ class FundTracker:
         log.debug('Print to screen complete.')
 
         return
+
+
+def interactive():
+    """Run application.
+
+    Provides a user-friendly interaction with program from shell. Program
+    stays running until user quits.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+
+    from interactive import Interactive
+
+    log.debug('Entering interactive...')
+
+    inter = Interactive()
+    inter.main_event_loop()
+
+    log.debug('Interactive complete.')
+
+    return
 
 
 def parse_args(argv=sys.argv):
@@ -597,6 +598,14 @@ def parse_args(argv=sys.argv):
         metavar=('Symbol', 'Start date', 'End date'),
     )
 
+    parser.add_argument(
+        '-i',
+        '--interactive',
+        help='Enter interactive mode.',
+        action='store_true',
+        default=False
+    )
+
     args = parser.parse_args()  # Collect arguments.
 
     log.debug(f'Parse_args complete. Args: {args}')
@@ -624,6 +633,10 @@ def run_application(args):
         core_self_test()
         return
 
+    elif args.interactive:
+        interactive()
+        return
+
     ft = FundTracker()  # Begin application instance.
 
     if args.getall:
@@ -646,9 +659,6 @@ def run_application(args):
     elif args.custom:
         ft.print_to_screen(ft.custom_range_performance(*args.custom))
         return
-
-    # Run Application main event loop when no args are True.
-    ft.main_event_loop()
 
     log.debug('Run application complete.')
 

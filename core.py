@@ -149,7 +149,6 @@ class Fund:
         depending on arguments.
 
         Args:
-            fund (Fund): Fund object.
             day (Bool): Defaults to True. When true includes previous day fund
                 performance in return.
             week (Bool): Defaults to True. When true includes previous week

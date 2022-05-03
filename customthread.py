@@ -15,6 +15,11 @@ Description:
     For complete list of arguments and attributes please refer to threading.Thread
     documentation.
 
+Attributes:
+    DEFAULT_LOG_FILENAME: Default filename for logging when module called directly.
+    DEFAULT_LOG_LEVEL: Default log level when this module is called directly.
+    RUNTIME_ID: Generate a unique uuid object. Used in logging.
+
 Composition Attributes:
     Line length = 88 characters.
 """
@@ -129,13 +134,7 @@ def self_test():
         None
     """
 
-    import unittest
-
-    import test_storage
-
-    # Conduct unittest.
-    suite = unittest.TestLoader().loadTestsFromModule(test_storage)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    pass
 
 
 if __name__ == '__main__':

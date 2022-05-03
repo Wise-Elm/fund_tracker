@@ -104,3 +104,42 @@ POST_INITIALIZED_FUND_1 = [
     'STOCK',
     'test'
 ]
+
+# Used to instantiate Fund objects.
+PRE_INSTANTIATED_FUND_1 = [
+    'FXAIX',
+    'USD',
+    'MUTUALFUND',
+    [
+        ['2021-01-01', 91.1],
+        ['2022-01-01', 92.2],
+        ['2020-01-01', 90.0]
+    ],
+    'test1'
+]
+
+# Used to instantiate Fund objects.
+PRE_INSTANTIATED_FUND_2 = [
+    'FNBGX',
+    'USD',
+    'MUTUALFUND',
+    [
+        ['2021-01-01', 91.1],
+        ['2022-01-01', 92.2],
+        ['2020-01-01', 90.0]
+    ],
+    'test2'
+]
+
+# Used to instantiate Fund objects.
+PRE_INSTANTIATED_FUND_3 = [
+    'FNCMX',
+    'USD',
+    'MUTUALFUND',
+    [
+        ['2021-01-01', 91.1],
+        ['2022-01-01', 92.2],
+        ['2020-01-01', 90.0]
+    ],
+    'test3'
+]
