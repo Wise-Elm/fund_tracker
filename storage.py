@@ -130,12 +130,17 @@ class Repo:
 
         log.debug(f'Loading from {file_name}...')
 
-        # Return blank list when data file does not exist.
-        if not exists(file_name):
-            log.warning(f'Data file: {file_name}, not found.')
-            return []
-
-        return self._file_type_handler(file_name, 'load')
+        try:
+            result = self._file_type_handler(file_name, 'load')
+        except StorageError:
+            result = []
+        except ValueError:
+            result = []
+        except BaseException:
+            result = []
+        finally:
+            log.debug(f'Length of result: {len(result)}.')
+            return result
 
     def save(self, data, file_name=None):
         """Save application data.
@@ -170,7 +175,7 @@ class Repo:
             save_load (string('save' or 'load')): Second parameter. Identifies whether
                 to call method to save or load data.
             data (None or list[Fund obj] or list['symbol', 'name']): Third parameter.
-                Data on which to perform operations.
+                Data on which to perform operations. Used when data is to be saved.
 
         Returns:
             result (loaded or saved data): Data on which operation was performed.
@@ -212,7 +217,7 @@ class Repo:
             save_load (string('save' or 'load')): Second parameter. Identifies whether
                 to call method to save or load data.
             data (None or list[Fund obj] or list['symbol', 'name']): Third parameter.
-                Data on which to perform operations.
+                Data on which to perform operations. Used when data is to be saved.
 
         Returns:
             Result from called method.
@@ -233,22 +238,31 @@ class Repo:
             file_name (str): Filename.
 
         Returns:
-            funds (list[['symbol', 'name']): List of lists containing the symbols and
+            funds (list[['symbol', 'name']]): List of lists containing the symbols and
                 names for each saved fund.
+
+        Raises:
+            StorageError (Exception): when argument file does not exist.
         """
 
         log.debug(f'Loading from {file_name}...')
+        
+        if exists(file_name):
+            funds = []
+            with open(file_name, 'r') as csvfile:
+                csv_reader = csv.reader(csvfile)
+                fields = next(csv_reader)
+                for fund in csv_reader:
+                    funds.append(fund)
 
-        funds = []
-        with open(file_name, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile)
-            fields = next(csv_reader)
-            for fund in csv_reader:
-                funds.append(fund)
+            log.debug(f'Loading from {file_name} complete.')
 
-        log.debug(f'Loading from {file_name} complete.')
+            return funds
 
-        return funds
+        else:
+            msg = f'File: {file_name}, does not exist. Cannot load from file.'
+            log.warning(msg)
+            raise StorageError(msg)
 
     def _save_csv(self, data, file_name):
         """Save data to .csv file.
@@ -311,7 +325,7 @@ def storage_self_test():
 
     import unittest
 
-    import test_storage
+    from tests import test_storage
 
     # Conduct unittest.
     suite = unittest.TestLoader().loadTestsFromModule(test_storage)

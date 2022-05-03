@@ -78,7 +78,7 @@ class RTV(threading.Thread):
             None
 
         Raises:
-            ControllerForYfError (Exception): Raised when self._target (function to be
+            CustomThreadError (Exception): Raised when self._target (function to be
                 called) is not found.
         """
 

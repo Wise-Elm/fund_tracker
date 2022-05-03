@@ -22,6 +22,8 @@ Attributes:
     DATE_FORMAT: Format for working with dates. (yyyy-mm-dd).
     DEFAULT_LOG_FILENAME: Default filename for logging when module called directly.
     DEFAULT_LOG_LEVEL: Default log level when this module is called directly.
+    MAX_CHARACTER_LEN: Maximum amount of characters for a fund string.
+    MIN_CHARACTER_LEN: Minimum amount of characters for a fund string.
     RUNTIME_ID: Generate a unique uuid object. Used in logging.
     CURRENT_DATE: String representing the current date in yyyy-mm-dd format.
     WEEK_AGO_DATE: String representing the date a week before the current date in
@@ -48,6 +50,8 @@ from yahoofinancials import YahooFinancials
 DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_LOG_FILENAME = 'pull_data.log'
 DEFAULT_LOG_LEVEL = logging.WARNING
+MAX_CHARACTER_LEN = 7
+MIN_CHARACTER_LEN = 0
 RUNTIME_ID = uuid.uuid4()
 
 # Date related attributes.
@@ -131,6 +135,12 @@ def _check_dates(start_date, end_date):
         log.warning(msg)
         raise PullDataError(msg)
 
+    if end_date > date.today():
+        msg = f'Start_date: {start_date}, cannot be greater than the current date: ' \
+              f'{date.today()}.'
+        log.warning(msg)
+        raise PullDataError(msg)
+
     return True
 
 
@@ -152,16 +162,27 @@ def _check_symbol(symbol):
         log.warning(msg)
         raise PullDataError(msg)
 
-    elif not 0 < len(symbol) < 10:
-        msg = f'Fund symbol must be between 1 and 9 characters. Current length: ' \
+    elif not MIN_CHARACTER_LEN <= len(symbol) <= MAX_CHARACTER_LEN:
+        msg = f'Fund symbol must be between 1 and 5 characters. Current length: ' \
               f'{len(symbol)}.'
         log.warning(msg)
         raise PullDataError(msg)
 
-    elif not symbol.isalpha():
-        msg = f'All characters in fund symbol must be alphabetic. Symbol: {symbol}.'
-        log.warning(msg)
-        raise PullDataError(msg)
+    for character in symbol:
+        # A Fund character can have any letter.
+        if character.isalpha():
+            continue
+        # A Fund character can have the digits 1 or 2.
+        elif character.isdigit() and int(character) < 3:
+            continue
+        # A Fund character can be the special characters '.', '-'.
+        elif character in ('.', '-'):
+            continue
+        # Illegal character found.
+        else:
+            msg = f'Fund symbol: {symbol}, is not legal. Check symbol.'
+            log.warning(msg)
+            raise PullDataError(msg)
 
     else:
         return True
@@ -324,7 +345,7 @@ def pull_from_yf_self_test():
 
     import unittest
 
-    import test_pull_from_yf
+    from tests import test_pull_from_yf
 
     # Conduct unittest.
     suite = unittest.TestLoader().loadTestsFromModule(test_pull_from_yf)
@@ -347,4 +368,4 @@ if __name__ == '__main__':
     log.addHandler(handler)
     log.setLevel(DEFAULT_LOG_LEVEL)
 
-    controller_for_yf_self_test()
+    pull_from_yf_self_test()

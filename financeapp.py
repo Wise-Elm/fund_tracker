@@ -667,7 +667,7 @@ def self_test():
 
     import unittest
 
-    import test_financeapp
+    from tests import test_financeapp
 
     log.debug('Self test...')
 

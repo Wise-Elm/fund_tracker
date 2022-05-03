@@ -475,7 +475,7 @@ def core_self_test():
 
     import unittest
 
-    import test_core
+    from tests import test_core
 
     # Conduct unittest.
     suite = unittest.TestLoader().loadTestsFromModule(test_core)

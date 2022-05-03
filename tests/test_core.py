@@ -7,7 +7,7 @@ import unittest
 
 # External Imports
 from core import CoreError, Fund
-from test_assets import (
+from tests.test_assets import (
     INITIALIZED_FUND_STR,
     INITIALIZED_FUND_REPR,
     POST_INITIALIZED_FUND_1,

@@ -4,11 +4,11 @@
 """This module is used to test financeapp.py"""
 import random
 import unittest
-from random import choice
 
+# Local imports.
 from core import Fund
 from financeapp import FundTracker, FundTrackerApplicationError
-from test_assets import SYMBOL_NAME, SYMBOL_NAME_2
+from tests.test_assets import SYMBOL_NAME, SYMBOL_NAME_2
 
 
 class TestApplication(unittest.TestCase):
