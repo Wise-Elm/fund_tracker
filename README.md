@@ -126,3 +126,19 @@ The use Python to run the program. This example brings up the help text:
 
 Fund Tracker was developed and tested with python 3.10.4.
 
+## Dependencies
+
+The virtual environment will require the following dependencies:
+
+- beautifulsoup4==4.10.0
+- certifi==2021.10.8
+- charset-normalizer==2.0.12
+- idna==3.3
+- python-dateutil==2.8.2
+- pytz==2021.3
+- six==1.16.0
+- soupsieve==2.3.1
+- urllib3==1.26.8
+- yahoofinancials==1.6
+
+Version accurate as of 05-05-2022.
