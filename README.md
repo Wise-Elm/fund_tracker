@@ -1,9 +1,8 @@
 # Title
 
-             __   *           _           __   __        _     __   __
-            |__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/
-            |     |   | \|  /   \  | \|  \__  |__      /   \  |    |  
-
+         __                __     _____  __    __    __        __   __  
+        |__   |  |  |\ |  |  \      |   |__\  |__|  |    |_/  |_   |__\ 
+        |     |__|  | \|  |__/      |   |  \  |  |  |__  | \  |__  |  \ 
 
 
 By Graham Steeds
@@ -59,11 +58,13 @@ provide the ability to make network request synchronously.
 
 
     Welcome to:
-             __   *           _           __   __        _     __   __
-            |__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/
-            |     |   | \|  /   \  | \|  \__  |__      /   \  |    |  
+         __                __     _____  __    __    __        __   __  
+        |__   |  |  |\ |  |  \      |   |__\  |__|  |    |_/  |_   |__\ 
+        |     |__|  | \|  |__/      |   |  \  |  |  |__  | \  |__  |  \ 
+
     
-    Application is being run in persistent mode. Enter 'menu' for a list of options, or 'quit' to exit.
+    Application is being run in persistent mode. Enter 'menu' for a list of options, or 
+    'quit' to exit.
     
     Enter your selection: menu
     Optional inputs:

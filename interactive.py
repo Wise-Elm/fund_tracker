@@ -139,9 +139,9 @@ class Interactive:
 
         welcome = (
             f"Welcome to:\n" 
-            f"{' '* ind} __   *           _           __   __        _     __   __\n"
-            f"{' '* ind}|__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/\n"
-            f"{' '* ind}|     |   | \|  /   \  | \|  \__  |__      /   \  |    |  \n\n"
+            f"{' '* ind} __                __     _____  __    __    __        __   __  \n"
+            f"{' '* ind}|__   |  |  |\ |  |  \      |   |__\  |__|  |    |_/  |_   |__\ \n"
+            f"{' '* ind}|     |__|  | \|  |__/      |   |  \  |  |  |__  | \  |__  |  \ \n\n"
             "Application is being run in interactive mode. Enter 'menu' for a list of "
             "options, or 'quit' to exit."
         )
