@@ -1,9 +1,9 @@
 # Title
-'''
+
              __   *           _           __   __        _     __   __
             |__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/
             |     |   | \|  /   \  | \|  \__  |__      /   \  |    |  
-'''
+
 
 
 By Graham Steeds
@@ -57,7 +57,7 @@ provide the ability to make network request synchronously.
 
 ## Menu
 
-'''
+
     Welcome to:
              __   *           _           __   __        _     __   __
             |__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/
@@ -76,11 +76,11 @@ provide the ability to make network request synchronously.
     
     Enter your selection: 
 
-'''
+
 
 ## Example Output for funds FBGRX, FNBGX, & FPADX.
 
-'''
+
     FBGRX - 
     USD - MUTUALFUND
     Latest price: 2022-05-03 - $140.03
@@ -102,7 +102,7 @@ provide the ability to make network request synchronously.
     Previous week     :  +3.30
     Previous year     : -19.51
     ****************************************
-'''
+
 
 # TODO
 
