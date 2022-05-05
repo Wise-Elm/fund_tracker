@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""This module is used to test financeapp.py"""
+"""This module is used to test fund_tracker.py"""
 import random
 import unittest
 
 # Local imports.
 from core import Fund
-from financeapp import FundTracker, FundTrackerApplicationError
+from fund_tracker import FundTracker, FundTrackerApplicationError
 from tests.test_assets import \
     PRE_INSTANTIATED_FUND_1, \
     PRE_INSTANTIATED_FUND_2, \

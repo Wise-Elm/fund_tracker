@@ -4,7 +4,7 @@
 __version__ = '0.1.0'
 
 """
-Application working title: financeapp.
+Application title: Fund Tracker.
 
 Author:
     Graham Steeds
@@ -17,18 +17,18 @@ Context:
     abstraction leaks, and errors.
 
 Description:
-    financeapp provides the user with an easy way to track the current and past history 
+    Fund Tracker provides the user with an easy way to track the current and past history 
     of money market accounts. The user may create a list of funds to save, incorporating 
     optional custom fund names, and view the financial history of those funds. 
     
     Users are able to add funds including choosing what to name a fund, as well as the 
     the ability to delete, edit, and view data from custom date ranges.
     
-    financeapp is designed to be easily expandable, being able to quickly incorporate 
+    Fund Tracker is designed to be easily expandable, being able to quickly incorporate 
     new financial data applications in order to retrieve data.
 
 Extendability:
-    financeapp is setup to allow easy extendability in the form of specifying custom 
+    Fund Tracker is setup to allow easy extendability in the form of specifying custom 
     file names for saving and loading data, with the ability of have multiple data sets.
     
     Adding modules for retrieving data from different sources is easily incorporated. 
@@ -49,7 +49,7 @@ Extendability:
                 ], 
             list[3] is ordered by date, the most current date being list[:-1].)
             
-    When these parameters are met financeapp can work with any outside data gathering 
+    When these parameters are met Fund Tracker can work with any outside data gathering 
     module.
     
     Attribute DATE_FORMAT must match in each dependant module.
@@ -90,7 +90,7 @@ from storage import Repo, storage_self_test
 DATE_FORMAT = '%Y-%m-%d'
 DEFAULT_DATA_FILE = 'data.csv'
 DEFAULT_DATA_SOURCE = 'yahoofinance'
-DEFAULT_LOG_FILENAME = 'financeapp.log'
+DEFAULT_LOG_FILENAME = 'fund_tracker.log'
 DEFAULT_LOG_LEVEL = logging.DEBUG
 DEFAULT_THREAD_TIMER = 0.8  # In seconds.
 RUNTIME_ID = uuid.uuid4()
@@ -677,12 +677,12 @@ def self_test():
 
     import unittest
 
-    from tests import test_financeapp
+    from tests import test_fund_tracker
 
     log.debug('Self test...')
 
     # Conduct unittest.
-    suite = unittest.TestLoader().loadTestsFromModule(test_financeapp)
+    suite = unittest.TestLoader().loadTestsFromModule(test_fund_tracker)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
     log.debug('Self test complete.')
@@ -724,4 +724,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # self_test()

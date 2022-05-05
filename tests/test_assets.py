@@ -6,7 +6,7 @@ Author:
     Graham Steeds
 
 Context:
-    Provide test assets for funanceapp.py and dependant module self testing.
+    Provide test assets for fund_tracker.py and dependant module self testing.
 
 Attributes:
     DESIRED_DATA: Simplified example return for controller_for_yf.parse_fund_data().

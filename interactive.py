@@ -6,7 +6,7 @@ Author:
     Graham Steeds
 
 Context:
-    Provide a simplistic interactive shell interface to FundTracker.
+    Provide a simplistic interactive shell interface to Fund Tracker.
 
 Description:
     Interactive mode gives user partial functionality containing the core functionality.
@@ -43,7 +43,7 @@ import uuid
 from logging import handlers
 
 # Local imports.
-from financeapp import FundTracker
+from fund_tracker import FundTracker
 
 DEFAULT_LOG_FILENAME = 'customthread.log'
 DEFAULT_LOG_LEVEL = logging.WARNING
@@ -142,7 +142,7 @@ class Interactive:
             f"{' '* ind} __   *           _           __   __        _     __   __\n"
             f"{' '* ind}|__   |   |\ |   /_\   |\ |  /    |__       /_\   |_/  |_/\n"
             f"{' '* ind}|     |   | \|  /   \  | \|  \__  |__      /   \  |    |  \n\n"
-            "Application is being run in persistent mode. Enter 'menu' for a list of "
+            "Application is being run in interactive mode. Enter 'menu' for a list of "
             "options, or 'quit' to exit."
         )
 

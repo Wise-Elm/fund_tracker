@@ -6,7 +6,7 @@ Author:
     Graham Steeds
 
 Context:
-    This module provides  the Fund object class for financeapp.py. The Fund object
+    This module provides  the Fund object class for fund_tracker.py. The Fund object
     class represents a financial instrument such as a mutual fund or stock, that is
     traded in a financial market.
 
