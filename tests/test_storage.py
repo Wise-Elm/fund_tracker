@@ -83,7 +83,7 @@ class TestApplication(unittest.TestCase):
         self.assertRaises(
             StorageError,
             self.repo._file_type_handler,
-            DEFAULT_STORAGE_TEST_FILENAME,
+            file,
             'load'
         )
 
@@ -96,15 +96,15 @@ class TestApplication(unittest.TestCase):
             )
         )
 
-        # Test return when saving. # TODO (GS): Why does this work without data argument.
+        # Test return when saving.
         self.assertEqual(
             SYMBOL_NAME,
             self.repo._file_type_handler(
                 DEFAULT_STORAGE_TEST_FILENAME,
-                'save'
+                'save',
+                SYMBOL_NAME
             )
         )
-
 
     def test_load_csv(self):
         """Test _load_csv."""
@@ -120,25 +120,6 @@ class TestApplication(unittest.TestCase):
             StorageError,
             self.repo._load_csv,
             'bad_filename.csv'
-        )
-
-    def test_file_type_handler(self):
-        """Test file_type_handler."""
-
-        # Confirm error is raised when using a bad file type.
-        self.assertRaises(
-            StorageError,
-            self.repo._file_type_handler,
-            'bad_filename.abc',
-            'load'
-        )
-
-        # Confirm error is raised when using a bad argument; save_load = 'asdf'.
-        self.assertRaises(
-            StorageError,
-            self.repo._file_type_handler,
-            DEFAULT_STORAGE_TEST_FILENAME,
-            'asdf'
         )
 
     def test_save_csv_and_load_csv(self):
