@@ -52,6 +52,24 @@ a custom multithreading module is included to control timeouts, network issues, 
 provide the ability to make network request synchronously.
 
 
+# Using Fund Tracker
+
+Fund Tracker may be used by running fund_tracker.sh which will launch the program in 
+interactive mode. Interactive mode provides the core functionality of the program 
+while limiting more obscure use cases, and provides a user friend platform.
+
+    $ ./fund_tracker.sh
+
+Fund Tracker can also be run directly from the shell.
+Activate the virtual environment:
+
+    $ source venv/bin/activate
+
+The use Python to run the program. This example brings up the help text:
+    
+    $ python fund_tracker.py -h
+
+
 # Application examples
 
 ## Menu
@@ -104,7 +122,7 @@ provide the ability to make network request synchronously.
     Previous year     : -19.51
     ****************************************
 
+# Python
 
-# TODO
+Fund Tracker was developed and tested with python 3.10.4.
 
-Develop further unittesting.
