@@ -4,7 +4,6 @@ venv
 *.log
 *.1
 Pipfile*
-*.sh
 *.swp
 *~
 /TAGS
