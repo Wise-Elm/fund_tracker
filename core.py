@@ -159,14 +159,14 @@ class Fund:
         Returns:
             performance (str): String including general fund information as
                 well time based performance data depending on arguments.
+
+        # TODO (GS): Add graph height and length characteristics to arguments.
         """
 
         log.debug(f'Generate fund perf str ({self.__repr__()})...')
 
-        performance = self.__str__()
+        performance = '\n' + self.__str__()
 
-        # Solution as suggested by Chris Kauffman, UMN. Original version worked but does
-        # not format result in matching string lengths before ':'. See Git history.
         fmt = "\n{:18}: {:+6.2f}"  # shared format string for past performances
         #         msg    value     # + means always include +/- for pos/neg
         # lines up messages and percent changes
@@ -184,7 +184,138 @@ class Fund:
 
         log.debug(f'Generate fund perf str ({self.__repr__()}) complete.')
 
+        # TODO (GS): Delete. Just for testing.
+        performance += '\n\n' + self.graph()
+
         return performance
+
+    def graph(self, height=15, length=50):
+
+        # Find most current date and associated price.
+        current_date_, current_price = self.get_most_current_price()
+
+        # Find start date based off current_date.
+        previous_date_, previous_price = \
+            self.get_most_current_price(current_date_ - timedelta(weeks=52))
+
+        # Create new list containing dates and prices between the previous and current
+        # dates.
+        lst = [dp for dp in self.dates_prices if
+               previous_date_ <= dp[0] <= current_date_]
+
+        # Confirm that lst is in order from least to greatest date.
+        # (oldest to most recent)
+        lst.sort(key=lambda date_price: date_price[0])
+
+        # Form a list of dates & prices that matches the length argument.
+        frequency = len(lst) // length  # Frequency of dates to pick.
+        graph_data = []
+        for i in lst:
+            # Automatically pick first and last dates/prices.
+            if lst.index(i) == lst[0] or lst.index(i) == lst[-1]:
+                graph_data.append(i)
+            # Pick dates/prices that match frequency.
+            elif lst.index(i) % frequency == 0:
+                graph_data.append(i)
+
+        # Trim length of graph list.
+        # If index of last date/price in list % frequency != 0 there will be an extra
+        # entry. Trim the middle most date/price.
+        while len(graph_data) > length:
+            graph_data.pop(len(graph_data) // 2)
+
+        # Find highest and lowest price.
+        highest_price = max(graph_data, key=lambda dp: dp[1])
+        lowest_price = min(graph_data, key=lambda dp: dp[1])
+
+        # Indentify the price difference from lowest to highest.
+        price_difference = highest_price[1] - lowest_price[1]
+
+        # Height categories.
+        row_price_difference = price_difference / height
+
+        # Modify graph_lst so dates are replaced with row height position.
+        for dp in graph_data:
+            row_found = False
+            graph_row = 0
+            price_segment = row_price_difference
+            while row_found is False:
+                if dp[1] <= price_segment + lowest_price[1]:
+                    dp[0] = graph_row
+                    row_found = True
+                else:
+                    graph_row += 1
+                    price_segment += row_price_difference
+
+        graph = self._construct_graph(
+                    graph_data,
+                    height,
+                    length,
+                    lowest_price,
+                    highest_price,
+                    previous_date_,
+                    current_date_
+        )
+
+        return graph
+
+    def _construct_graph(
+            self,
+            graph_data,
+            height,
+            length,
+            lowest_price,
+            highest_price,
+            previous_date_,
+            current_date_
+    ):
+        """Helper method for self.graph."""
+
+        fmt = '{:5.2f}'  # Format for y axis values.
+        graph = ''  # String on which the graph is drawn.
+        graph_complete = False
+        row = height - 1  # Graph row.
+
+        while graph_complete is False:
+
+            # Loop for each graph row.
+            for h in range(height):
+
+                # Loop for each data point in graph_lst.
+                for data_point in graph_data:
+                    # Data point matches price category.
+                    if data_point[0] == row:
+                        graph += '*'
+                    # Data point does not match price category.
+                    else:
+                        graph += ' '
+
+                # Add the highest price to end of line at top of graph.
+                if row == height - 1:
+                    graph += '|' + '$' + fmt.format(highest_price[1]) + '\n'
+                # Add the lowest price to end of line at bottom of graph.
+                elif row == 0:
+                    graph += '|' + '$' + fmt.format(lowest_price[1]) + '\n'
+                # Rows that are not the top or bottom.
+                else:
+                    graph += '|\n'
+                # Increment row.
+                row -= 1
+
+            graph += ('_' * length) + '|'  # Draw x axis.
+            graph_complete = True  # Graph structure complete.
+
+        # Place dates under x axis.
+        earliest_date, latest_date = str(previous_date_), str(current_date_)
+        # Determine number of blank spaces between dates.
+        num_spaces = length - len(earliest_date) - len(latest_date)
+        # Construct footer.
+        footer = earliest_date + ' ' * num_spaces + latest_date
+        # Add footer if there is enough space. Determined by the length of graph.
+        if num_spaces > 3:
+            graph += '\n' + footer
+
+        return graph
 
     def day_performance(self):
         """Get the performance of fund period between last open and close.
@@ -308,23 +439,21 @@ class Fund:
         if search_date is None:
             search_date = self.dates_prices[-1][0]
 
-        # Usage of bisect.bisect_left as suggested by Chris Kauffman, UMN. The bisect
-        # module provides O(log(N)) searching. Previous solution required O(N).
+        # The bisect module provides O(log(N)) searching.
         # Identify index of search_date.
         index = bisect.bisect_left(
             self.dates_prices,  # List[list[date, price]]
             search_date,
             key=(lambda dp: dp[0]))  # Position for date within inner lists.
 
+        # TODO (GS): Check this over.
         # Get date and price data for search_date argument.
-        most_current_date, most_current_price = \
-            self.dates_prices[index][0], self.dates_prices[index][1] or None
-
         # Revert to previous day if price data has not been updated.
+        most_current_price = None
         while most_current_price is None:
-            for date_, price in reversed(self.dates_prices):
-                most_current_date = date_  # ex. datetime.date(2022, 3, 16)
-                most_current_price = price  # ex.151.123456789
+            most_current_date, most_current_price = \
+                self.dates_prices[index][0], self.dates_prices[index][1] or None
+            index -= 1
 
         log.debug(f'Get most current price ({self.__repr__()}, '
                   f'price: {most_current_price}, date: {most_current_date}) complete. ')
@@ -339,7 +468,7 @@ class Fund:
 
          Args:
              start_date (datetime obj): Second parameter. Ideal starting date.
-             end_date (datetime obj): Thirt parameter. Idea ending date.
+             end_date (datetime obj): Third parameter. Ideal ending date.
 
          Returns:
              dates_prices (list[date(str), price(str)]): List of dates and associated

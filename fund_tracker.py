@@ -409,7 +409,7 @@ class FundTracker:
         for fund in self.funds:
             try:
                 all_performance += '\n' + fund.generate_fund_performance_str(*kvargs)
-                all_performance += '\n' + '*' * 40
+                all_performance += '\n' + '*' * 50
             except AttributeError as ae:
                 # Can occur upon thread timeout, or lag from dependant modules over
                 # network that cannot locate a fund.
@@ -691,7 +691,9 @@ def self_test():
 def test():
     """For development level module testing."""
 
-    pass
+    ft = FundTracker()
+    x = ft.funds[0]
+    print(x.generate_fund_performance_str())
 
     
 def main():
@@ -724,3 +726,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
