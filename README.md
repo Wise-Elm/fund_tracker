@@ -97,30 +97,38 @@ The use Python to run the program. This example brings up the help text:
 
 
 
-## Example Output for funds FBGRX, FNBGX, & FPADX.
+## Example Output for funds FBGRX.
 
+The standard output presents the fund symbol followed by frequently desired fund 
+information such as the latest price, and performance over the previous 24, week, and 
+year of trading. Following is a graph showing the pricing over the previous year.
 
     FBGRX - 
     USD - MUTUALFUND
-    Latest price: 2022-05-03 - $140.03
-    Previous 24 hours :  +0.07
-    Previous week     :  +0.96
-    Previous year     : -19.27
-    ****************************************
-    FNBGX - 
-    USD - MUTUALFUND
-    Latest price: 2022-05-03 - $11.86
-    Previous 24 hours :  -0.59
-    Previous week     :  -3.26
-    Previous year     : -15.77
-    ****************************************
-    FPADX - 
-    USD - MUTUALFUND
-    Latest price: 2022-05-03 - $10.60
-    Previous 24 hours :  -0.47
-    Previous week     :  +3.30
-    Previous year     : -19.51
-    ****************************************
+    Latest price: 2022-05-06 - $133.53
+    Previous 24 hours :  +1.58
+    Previous week     :  -2.99
+    Previous year     : -23.25
+    
+                                          ******                                                        |$198.19
+                               *   ****  *                                                              |
+                      ******  * ***    **             *     *                                           |
+                   ***      **                   *  **   ***                                            |
+              * ***                             * **   **                                               |
+    *     **** *                                             ***                                        |
+     * * *                                                      *                                       |
+      * *                                                        *    *  *                              |
+                                                                  *     *  *           ******           |
+                                                                   * * *  * *  **     *      *          |
+                                                                    *        **      *         * *      |
+                                                                                 * *          * *       |
+                                                                                  *               * * * |
+                                                                                    *              * *  |
+                                                                                                       *|$133.53
+    ____________________________________________________________________________________________________|
+    2021-05-07                                                                                2022-05-06
+    ****************************************************************************************************
+    
 
 # Python
 

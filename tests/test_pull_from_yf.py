@@ -14,7 +14,6 @@ from pull_from_yf import \
     _check_symbol, \
     _get_fund_data, \
     _parse_fund_data, \
-    get_yf_fund_data, \
     PullDataError
 from tests.test_assets import DESIRED_DATA, RAW_FUND_DATA
 

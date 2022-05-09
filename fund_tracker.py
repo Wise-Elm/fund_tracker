@@ -76,14 +76,14 @@ import sys
 import time
 import uuid
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from logging import handlers
 
 # Local imports.
 from core import core_self_test, Fund
-from pull_from_yf import get_yf_fund_data, pull_from_yf_self_test
 from customthread import RTV as rtv
+from pull_from_yf import get_yf_fund_data, pull_from_yf_self_test
 from storage import Repo, storage_self_test
 
 
@@ -409,7 +409,7 @@ class FundTracker:
         for fund in self.funds:
             try:
                 all_performance += '\n' + fund.generate_fund_performance_str(*kvargs)
-                all_performance += '\n' + '*' * 50
+                all_performance += '\n' + '*' * 100
             except AttributeError as ae:
                 # Can occur upon thread timeout, or lag from dependant modules over
                 # network that cannot locate a fund.

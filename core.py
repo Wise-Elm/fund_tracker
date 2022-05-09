@@ -184,12 +184,36 @@ class Fund:
 
         log.debug(f'Generate fund perf str ({self.__repr__()}) complete.')
 
-        # TODO (GS): Delete. Just for testing.
         performance += '\n\n' + self.graph()
 
         return performance
 
-    def graph(self, height=15, length=50):
+    def graph(self, height=15, length=100):
+        """Draw a graph of fund performance over the past 12 months.
+
+        Graph will be plotted with the earliest price first, followed by latest price,
+        and filled in with subsequent data as length will allow.
+
+        Args:
+            height (int): First parameter. Optional. Height of graph.
+            length (int): Second parameter. Optional. Length of graph.
+
+        Returns:
+            graph (str): String representation of graph.
+
+        Raises:
+            CoreError when height or length is <= 0.
+        """
+
+        if height < 1:
+            msg = f'Graph height must be greater that 0. Currently height is {height}.'
+            log.warning(msg)
+            raise CoreError(msg)
+
+        if length < 1:
+            msg = f'Graph length must be greater that 0. Currently length is {length}.'
+            log.warning(msg)
+            raise CoreError(msg)
 
         # Find most current date and associated price.
         current_date_, current_price = self.get_most_current_price()
@@ -207,35 +231,19 @@ class Fund:
         # (oldest to most recent)
         lst.sort(key=lambda date_price: date_price[0])
 
-        # Form a list of dates & prices that matches the length argument.
-        frequency = len(lst) // length  # Frequency of dates to pick.
-        graph_data = []
-        for i in lst:
-            # Automatically pick first and last dates/prices.
-            if lst.index(i) == lst[0] or lst.index(i) == lst[-1]:
-                graph_data.append(i)
-            # Pick dates/prices that match frequency.
-            elif lst.index(i) % frequency == 0:
-                graph_data.append(i)
+        # List of data matching the length argument.
+        data = self._trim_list(lst, length)
 
-        # Trim length of graph list.
-        # If index of last date/price in list % frequency != 0 there will be an extra
-        # entry. Trim the middle most date/price.
-        while len(graph_data) > length:
-            graph_data.pop(len(graph_data) // 2)
-
-        # Find highest and lowest price.
-        highest_price = max(graph_data, key=lambda dp: dp[1])
-        lowest_price = min(graph_data, key=lambda dp: dp[1])
-
-        # Indentify the price difference from lowest to highest.
+        # Find highest and lowest price, as well as the difference between the two.
+        highest_price = max(data, key=lambda dp: dp[1])
+        lowest_price = min(data, key=lambda dp: dp[1])
         price_difference = highest_price[1] - lowest_price[1]
 
-        # Height categories.
+        # Find pricing difference from one row to another.
         row_price_difference = price_difference / height
 
         # Modify graph_lst so dates are replaced with row height position.
-        for dp in graph_data:
+        for dp in data:
             row_found = False
             graph_row = 0
             price_segment = row_price_difference
@@ -248,7 +256,7 @@ class Fund:
                     price_segment += row_price_difference
 
         graph = self._construct_graph(
-                    graph_data,
+                    data,
                     height,
                     length,
                     lowest_price,
@@ -259,9 +267,43 @@ class Fund:
 
         return graph
 
+    def _trim_list(self, lst, length):
+        """Prepare list for graphing.
+
+        Trims the list of data so that it is the same length as the length argument
+        and still represents an accurate cross-section of the data.
+
+        Args:
+            lst (list(list(datetime object, price))): Data list.
+            length (positive int): Length for graph.
+
+        Returns:
+            data (list(list(datetime object, price)): List of data matching the length
+                argument and representing a cross-section of the lst argument.
+        """
+
+        # Form a list of dates & prices that matches the length argument.
+        frequency = len(lst) // length  # Frequency of dates to pick.
+        data = []
+        for i in lst:
+            # Automatically pick first and last dates/prices.
+            if lst.index(i) == lst[0] or lst.index(i) == lst[-1]:
+                data.append(i)
+            # Pick dates/prices that match frequency.
+            elif lst.index(i) % frequency == 0:
+                data.append(i)
+
+        # Trim length of graph list.
+        # If index of last date/price in list % frequency != 0 there will be an extra
+        # entry. Trim the middle most date/price.
+        while len(data) > length:
+            data.pop(len(data) // 2)
+
+        return data
+
     def _construct_graph(
             self,
-            graph_data,
+            data,
             height,
             length,
             lowest_price,
@@ -269,7 +311,24 @@ class Fund:
             previous_date_,
             current_date_
     ):
-        """Helper method for self.graph."""
+        """Construct graph string.
+
+        Helper method for self.graph.
+
+        Args:
+            data (list(list(date object, int))): First parameter. List of lists
+                containing dates and associated prices.
+            height (int): Second parameter. Height of graph.
+            length (int): Third parameter. Length of graph.
+            lowest_price (list(datetime obj, float)): Fourth parameter. List where
+                index 1 indicates the lowest price represented in data.
+            highest_price (list(datetime obj, float)): Fifth parameter. List where
+                index 1 indicates the highest price represented in data.
+            previous_date_ (datetime object): Sixth parameter. Represents the earliest
+                date for the graph to plot.
+            current_date_ (datetime object): Seventh parameter. Represents the latest
+                date for the graph to plot.
+        """
 
         fmt = '{:5.2f}'  # Format for y axis values.
         graph = ''  # String on which the graph is drawn.
@@ -282,7 +341,7 @@ class Fund:
             for h in range(height):
 
                 # Loop for each data point in graph_lst.
-                for data_point in graph_data:
+                for data_point in data:
                     # Data point matches price category.
                     if data_point[0] == row:
                         graph += '*'
@@ -302,7 +361,7 @@ class Fund:
                 # Increment row.
                 row -= 1
 
-            graph += ('_' * length) + '|'  # Draw x axis.
+            graph += ('_' * length) + '|'  # Draw x-axis.
             graph_complete = True  # Graph structure complete.
 
         # Place dates under x axis.
